@@ -162,6 +162,6 @@ if __name__ == "__main__":
         # rc_text_split(loader)  # RecursiveCharacterTextSplitter 사용할 때
 
         # 이 부분만 수정해서 사용하면 됨
-        # query = "원서 접수 날짜는 언제야?"
-        query = "디자인조형학과의 실기종목과 준비물, 실기주에, 화지크기, 시간에 대해서 알려줘"
+        query = "원서 접수 날짜는 언제야?"
+        # query = "디자인조형학과의 실기종목과 준비물, 실기주에, 화지크기, 시간에 대해서 알려줘"
         db_qna(query)
