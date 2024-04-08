@@ -161,3 +161,4 @@ cython_debug/
 deuChatbot/chroma_db/
 deuChatbot/llama-2-7b-chat.Q4_K_M.gguf
 deuChatbot/test.py
+deuChatbot/.idea/
