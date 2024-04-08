@@ -141,7 +141,10 @@ def run():
 
         # 문서 임베딩 및 벡터스토어 저장
         embedding_model_number = input(
-            "문서 임베딩에 사용할 임베딩 모델을 고르시오. 고르지 않을 경우 HuggingFaceEmbeddings 모델을 기본으로 사용합니다.\n1: OpenAIEmbeddings()\n2: HuggingFaceEmbeddings()\n\n 선택 번호 : ")
+            "문서 임베딩에 사용할 임베딩 모델을 고르시오. 고르지 않을 경우 HuggingFaceEmbeddings 모델을 기본으로 사용합니다.\n"
+            "1: OpenAIEmbeddings()\n"
+            "2: HuggingFaceEmbeddings()\n\n "
+            "선택 번호 : ")
 
         if embedding_model_number == 1:
             model = OpenAIEmbeddings()

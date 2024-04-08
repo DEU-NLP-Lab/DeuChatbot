@@ -18,6 +18,15 @@ LangChain을 이용하여 아래의 RAG 구조에 맞게 개발하였다.
 
 ![image](https://github.com/915-Lab/DBToJsonProject/assets/138217806/32336129-ed9b-4a62-a213-9a7ed43b436d)  
 - - -
+패키지 버전
+-----------
+- chromadb 0.4.24
+- tiktoken 0.6.0
+- transformers 4.38.2
+- sentence_transformers 2.6.0
+- langchain 0.1.13
+- openai 1.14.3
+- - -
 사용방법
 -----------
 1. 문서 임베딩에 사용할 모델을 고른다.
