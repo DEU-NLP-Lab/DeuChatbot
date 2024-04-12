@@ -1,12 +1,15 @@
 import tiktoken  # openAI 에서 제공하는 오픈 소스 토크나이저
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.schema.runnable import RunnableMap
+from langchain.prompts import ChatPromptTemplate
 
 import os
 import shutil
@@ -18,26 +21,48 @@ def tiktoken_len(text):
     return len(tokens)
 
 
-def chat_llm(db):
+def chat_llm():
     """
     채팅에 사용되는 거대언어모델 생성 함수
-    :param db: 벡터저장소
     :return: 답변해주는 거대언어모델
     """
 
-    os.environ['OPENAI_API_KEY'] = "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"  # 테스트 버전일 때
+    model_check = input(
+        "채팅에 사용할 모델을 고르시오. 고르지 않을 경우 Google Gemini-1.5 Pro 모델을 기본으로 사용합니다.\n1: ChatOpenAI()\n2: ChatGoogleGenerativeAI()\n\n 선택 번호 : ")
 
-    # Retriever 적용
-    openai = ChatOpenAI(
-        model_name="gpt-3.5-turbo",
-        streaming=True, callbacks=[StreamingStdOutCallbackHandler()],
-        temperature=0
-    )
+    if model_check == "1":
+        os.environ['OPENAI_API_KEY'] = "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"  # 테스트 버전일 때
+
+        # Retriever 적용
+        llm = ChatOpenAI(
+            model_name="gpt-3.5-turbo",
+            streaming=True, callbacks=[StreamingStdOutCallbackHandler()],
+            temperature=0
+        )
+    else:
+        os.environ['GOOGLE_API_KEY'] = "AIzaSyBZuxIG0vS-XGSm6HDyrOaxbyRayY8yXDc"  # 테스트 버전일 때
+
+        llm = ChatGoogleGenerativeAI(
+            model="gemini-pro",
+            temperature=0
+        )
+
+    return llm
+
+
+def db_qna_openai(llm, db, q):
+    """
+    벡터저장소에서 질문을 검색해서 적절한 답변을 찾아서 답하도록 하는 함수
+    :param llm: 거대 언어 모델
+    :param db: 벡터스토어
+    :param q: 사용자 질문
+    :return: 거대언어모델(LLM) 응답 결과
+    """
 
     # chroma 객체를 retriever를 활용할 건데 mmr 즉, 최대한 다양하게 답변을 구성할 것이다. 근데 어떤식으로 답변을 구성할 것이냐면
     # 총 10개의 연관성있는 문서를 뽑은 다음에 최대한 다양하게 조합을 구성을 하되 세 개만 컨텍스트로 LLM에게 넘겨줘라는 것이다.
     qa = RetrievalQA.from_chain_type(
-        llm=openai,
+        llm=llm,
         chain_type="stuff",  # 전처리 데이터가 현재 청크 사이즈 문제가 있어 토큰 이슈가 발생할 가능성 있음
         retriever=db.as_retriever(
             # docsearch에서 chroma를 저장소로 사용하는 것이 아니라 as_retriever 연관성 높은 벡터를 찾는 검색기로 사용하기 위해서 as_retriever 함수 사용
@@ -50,24 +75,46 @@ def chat_llm(db):
         return_source_documents=True
     )
 
-    return qa
-
-
-def db_qna(db, q):
-    """
-    벡터저장소에서 질문을 검색해서 적절한 답변을 찾아서 답하도록 하는 함수
-    :param db: 벡터스토어
-    :param q: 사용자 질문
-    :return: 추가 질문 유무
-    """
-
-    qa = chat_llm(db)
-
     result = qa(q)
     # print("\n\n{}".format(result))
-    # print("\n\n{}".format(result['source_documents'][0].page_content))  # 인덱스 맨 마지막 것이 가장 유사도가 높은거 같음 => 아래 실행해보니 아님. 후보군 3개 중에서 짜집기해서 답 내는 것 같음
 
-    return input("\n\nY: 계속 질문한다.\nN: 프로그램 종료\n입력: ")
+    return result
+
+
+def db_qna_gemini(llm, db, q):
+    """
+    벡터저장소에서 질문을 검색해서 적절한 답변을 찾아서 답하도록 하는 함수
+    :param llm: 거대 언어 모델
+    :param db: 벡터스토어
+    :param q: 사용자 질문
+    :return: 거대언어모델(LLM) 응답 결과
+    """
+
+    retriever = db.as_retriever(
+        search_type="mmr",
+        search_kwargs={'k': 3, 'fetch_k': 10}
+    )
+
+    template = """    
+        Based on the provided context, explain the question clearly and directly, as if you were responding like an admissions office staff member.
+        {context}
+        Question: {question}
+        """
+
+    prompt = ChatPromptTemplate.from_template(template)
+
+    chain = RunnableMap({
+        "context": lambda x: retriever.get_relevant_documents(x['question']),
+        "question": lambda x: x['question']
+    }) | prompt | llm
+
+    result = chain.invoke({
+        "context": retriever.get_relevant_documents(q),
+        'question': q
+    })
+    print("\n\n{}".format(result.content))
+
+    return result
 
 
 def document_embedding(docs, model, save_directory):
@@ -100,13 +147,13 @@ def c_text_split(corpus):
     """
     CharacterTextSplitter를 사용하여 문서를 분할하도록 하는 함수
     :param corpus: 전처리 완료된 말뭉치
-    :return:
+    :return: 분리된 청크
     """
 
     c_text_splitter = CharacterTextSplitter(
         separator="---",
-        chunk_size=1000,
-        chunk_overlap=100,
+        chunk_size=1500,
+        chunk_overlap=0,
         length_function=tiktoken_len,  # 단위를 토큰으로 함
     )
 
@@ -115,7 +162,6 @@ def c_text_split(corpus):
     text_documents = c_text_splitter.create_documents(texts)  # document로 만들기
 
     # token 사이즈 출력
-
     # token_list = []
     # for i in range(len(text_documents)):
     #     token_list.append(tiktoken_len(text_documents[i].page_content))
@@ -129,7 +175,6 @@ def run():
     """
     챗봇 시작
     Document Load -> Text Splitter -> Ducument Embedding -> VectorStore save -> QA
-    :return:
     """
 
     # 문서 업로드
@@ -160,12 +205,21 @@ def run():
 
         document_embedding(chunk, model, save_directory="./chroma_db")
 
+        # 채팅에 사용할 거대언어모델(LLM) 선택
+        llm = chat_llm()
+
         # 정보 검색
         db = Chroma(persist_directory="./chroma_db", embedding_function=model)
         check = 'Y'  # 0이면 질문 가능
         while check == 'Y' or check == 'y':
             query = input("질문을 입력하세요 : ")
-            check = db_qna(db, query)
+
+            if isinstance(llm, ChatGoogleGenerativeAI):
+                db_qna_gemini(llm, db, query)
+            elif isinstance(llm, ChatOpenAI):
+                db_qna_openai(llm, db, query)
+
+            check = input("\n\nY: 계속 질문한다.\nN: 프로그램 종료\n입력: ")
 
 
 if __name__ == "__main__":
