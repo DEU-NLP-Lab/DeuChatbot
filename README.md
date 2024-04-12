@@ -20,12 +20,10 @@ LangChain을 이용하여 아래의 RAG 구조에 맞게 개발하였다.
 - - -
 패키지 버전
 -----------
-- chromadb 0.4.24
-- tiktoken 0.6.0
-- transformers 4.38.2
-- sentence_transformers 2.6.0
-- langchain 0.1.13
-- openai 1.14.3
+requirements.txt
+```
+pip install -r requirements.txt
+```
 - - -
 사용방법
 -----------
