@@ -27,15 +27,31 @@ pip install -r requirements.txt
 - - -
 사용방법
 -----------
-1. 문서 임베딩에 사용할 모델을 고른다.
-2. 알고싶은 정보를 질문한다.
-3. 프로그램을 계속 사용할지 프로그램을 종료할지 선택한다.
+1. 문서 임베딩에 사용할 모델을 선택한다.
+    * OpenAIEmbedding 경우 (유료)
+        ```python
+         os.environ['OPENAI_API_KEY'] = input('발급 받은 OpenAI API Key를 입력해주세요: ')
+        ```
+        OpenAI API Key를 입력하면 정상 동작한다.   
+        단, 잔여 크레딧이 있을 경우에만 실행 가능하다.
+    * HuggingFaceEmbedding 경우 (무료)
+        API Key 상관없이 무료로 바로 사용 가능하다.
+2. 채팅에 사용할 모델을 선택한다.
+   * ChatOpenAI 경우 (유료)
+   * Google Gemini Pro 경우 (무료)
+     1. https://aistudio.google.com 접속하여 가입한다.
+     2. ![image](https://github.com/915-Lab/DeuChatbot/assets/93813747/644bd75b-9719-442b-928f-9faadd6b0642)   
+     첨부된 사진과 같이 좌측에 있는 Get API Key를 선택하고 화면 중앙에 있는 Create API key를 누르면 발급된다.
+     3. 발급받은 API Key를 입력한다.
+3. 알고싶은 정보를 질문한다.
+4. 프로그램을 계속 사용할지 프로그램을 종료할지 선택한다.
 
 - - -
 결과
 ----------
-![image](https://github.com/915-Lab/DBToJsonProject/assets/138217806/7562046c-cad1-44c3-9c14-f4cbcbcc58bb)  
-![image](https://github.com/915-Lab/DBToJsonProject/assets/138217806/e80fa0a0-ee1a-4b66-9d5b-b86a9a69e0bc)  
+![image](https://github.com/915-Lab/DeuChatbot/assets/93813747/bbcf17be-4a88-4e53-b718-e3c52debd13e)
+![image](https://github.com/915-Lab/DeuChatbot/assets/93813747/85366d26-f41c-48f6-a5f6-2d4b480ce9cb)
+![image](https://github.com/915-Lab/DeuChatbot/assets/93813747/f4b36226-8464-47b8-9f1d-0a905ff38b3b)
 ![image](https://github.com/915-Lab/DBToJsonProject/assets/138217806/c85b0ab3-fa8f-4ada-96ae-2326552a88e6)
 - - -
 추가 예정 기능
