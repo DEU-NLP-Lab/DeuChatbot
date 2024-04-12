@@ -40,7 +40,8 @@ pip install -r requirements.txt
    * ChatOpenAI 경우 (유료)
    * Google Gemini Pro 경우 (무료)
      1. https://aistudio.google.com 접속하여 가입한다.
-     2. ![image](https://github.com/915-Lab/DeuChatbot/assets/93813747/644bd75b-9719-442b-928f-9faadd6b0642)   
+     2.    
+     ![image](https://github.com/915-Lab/DeuChatbot/assets/93813747/644bd75b-9719-442b-928f-9faadd6b0642)   
      첨부된 사진과 같이 좌측에 있는 Get API Key를 선택하고 화면 중앙에 있는 Create API key를 누르면 발급된다.
      3. 발급받은 API Key를 입력한다.
 3. 알고싶은 정보를 질문한다.
