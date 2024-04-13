@@ -1,4 +1,3 @@
-import tiktoken  # openAI 에서 제공하는 오픈 소스 토크나이저
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.embeddings import OpenAIEmbeddings
@@ -13,12 +12,6 @@ from langchain.prompts import ChatPromptTemplate
 
 import os
 import shutil
-
-
-def tiktoken_len(text):
-    tokenizer = tiktoken.get_encoding("cl100k_base")
-    tokens = tokenizer.encode(text)
-    return len(tokens)
 
 
 def chat_llm():
@@ -197,23 +190,15 @@ def c_text_split(corpus):
     :return: 분리된 청크
     """
 
-    c_text_splitter = CharacterTextSplitter(
+    c_text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
         separator="---",
         chunk_size=1500,
         chunk_overlap=0,
-        length_function=tiktoken_len,  # 단위를 토큰으로 함
     )
 
     texts = c_text_splitter.split_text(corpus)
 
     text_documents = c_text_splitter.create_documents(texts)  # document로 만들기
-
-    # token 사이즈 출력
-    # token_list = []
-    # for i in range(len(text_documents)):
-    #     token_list.append(tiktoken_len(text_documents[i].page_content))
-
-    # print(token_list)
 
     return text_documents
 
