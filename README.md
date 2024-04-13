@@ -38,11 +38,22 @@ pip install -r requirements.txt
         API Key 상관없이 무료로 바로 사용 가능하다.
 2. 채팅에 사용할 모델을 선택한다.
    * ChatOpenAI 경우 (유료)
-     * Google Gemini Pro 경우 (무료)
-       1. https://aistudio.google.com 접속하여 가입한다.
-       2. 첨부된 사진과 같이 좌측에 있는 Get API Key를 선택하고 Create API key를 누르면 발급된다.   
-        ![image](https://github.com/915-Lab/DeuChatbot/assets/93813747/644bd75b-9719-442b-928f-9faadd6b0642)
-       3. 발급받은 API Key를 입력한다.
+   * Google Gemini Pro 경우 (무료)
+     1. https://aistudio.google.com 접속하여 가입한다.
+     2. 첨부된 사진과 같이 좌측에 있는 Get API Key를 선택하고 Create API key를 누르면 발급된다.   
+      ![image](https://github.com/915-Lab/DeuChatbot/assets/93813747/644bd75b-9719-442b-928f-9faadd6b0642)
+     3. 발급받은 API Key를 입력한다.
+   * Ollama 경우 (무료)   
+     1. 선택 전 https://ollama.com/ 사이트에 접속하여 다운로드한다.   
+     2. GGUF: https://huggingface.co/heegyu/EEVE-Korean-Instruct-10.8B-v1.0-GGUF   
+        사이트에 접속하여 file을 선택하고 ggml-model-Q4_K_M.gguf 파일을 챗봇 폴더에 다운로드 한다.   
+     3. cmd 창을 실행한다.   
+        ```ollama create EEVE-Korean-10.8B -f EEVE-Korean-Instruct-10.8B-v1.0-GGUF/Modelfile```   
+     4. Ollama 모델 목록을 확인한다.   
+        ```ollama list```
+     5. Ollama 모델을 실행한다.   
+        ```ollama run EEVE-Korean-10.8B:latest```
+        
 3. 알고싶은 정보를 질문한다.
 4. 프로그램을 계속 사용할지 프로그램을 종료할지 선택한다.
 

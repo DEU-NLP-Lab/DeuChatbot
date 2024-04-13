@@ -3,7 +3,7 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOpenAI, ChatOllama
 from langchain.chains import RetrievalQA
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
@@ -27,8 +27,17 @@ def chat_llm():
     :return: 답변해주는 거대언어모델
     """
 
-    model_check = input(
-        "채팅에 사용할 모델을 고르시오. 고르지 않을 경우 Google Gemini-1.5 Pro 모델을 기본으로 사용합니다.\n1: ChatOpenAI()\n2: ChatGoogleGenerativeAI()\n\n 선택 번호 : ")
+    model_check = '2'
+
+    while True:
+        model_check = input(
+            "채팅에 사용할 모델을 고르시오. 고르지 않을 경우 Google Gemini-1.5 Pro 모델을 기본으로 사용합니다.\n1: ChatOpenAI()\n2: "
+            "ChatGoogleGenerativeAI()\n3: ChatOllama(한국어 모델)\n\n 선택 번호 : ")
+
+        if model_check in ['1', '2', '3']:
+            break
+        else:
+            print("잘못된 입력입니다. 1, 2, 3 중 하나를 선택해주세요.\n")
 
     if model_check == "1":
         os.environ['OPENAI_API_KEY'] = "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"  # 테스트 버전일 때
@@ -39,13 +48,15 @@ def chat_llm():
             streaming=True, callbacks=[StreamingStdOutCallbackHandler()],
             temperature=0
         )
-    else:
+    elif model_check == "2":
         os.environ['GOOGLE_API_KEY'] = "AIzaSyBZuxIG0vS-XGSm6HDyrOaxbyRayY8yXDc"  # 테스트 버전일 때
 
         llm = ChatGoogleGenerativeAI(
             model="gemini-pro",
             temperature=0
         )
+    elif model_check == "3":
+        llm = ChatOllama(model="EEVE-Korean-10.8B:latest")
 
     return llm
 
@@ -82,6 +93,42 @@ def db_qna_openai(llm, db, q):
 
 
 def db_qna_gemini(llm, db, q):
+    """
+    벡터저장소에서 질문을 검색해서 적절한 답변을 찾아서 답하도록 하는 함수
+    :param llm: 거대 언어 모델
+    :param db: 벡터스토어
+    :param q: 사용자 질문
+    :return: 거대언어모델(LLM) 응답 결과
+    """
+
+    retriever = db.as_retriever(
+        search_type="mmr",
+        search_kwargs={'k': 3, 'fetch_k': 10}
+    )
+
+    template = """    
+        Based on the provided context, explain the question clearly and directly, as if you were responding like an admissions office staff member.
+        {context}
+        Question: {question}
+        """
+
+    prompt = ChatPromptTemplate.from_template(template)
+
+    chain = RunnableMap({
+        "context": lambda x: retriever.get_relevant_documents(x['question']),
+        "question": lambda x: x['question']
+    }) | prompt | llm
+
+    result = chain.invoke({
+        "context": retriever.get_relevant_documents(q),
+        'question': q
+    })
+    print("\n\n{}".format(result.content))
+
+    return result
+
+
+def db_qna_ollama(llm, db, q):
     """
     벡터저장소에서 질문을 검색해서 적절한 답변을 찾아서 답하도록 하는 함수
     :param llm: 거대 언어 모델
@@ -218,6 +265,8 @@ def run():
                 db_qna_gemini(llm, db, query)
             elif isinstance(llm, ChatOpenAI):
                 db_qna_openai(llm, db, query)
+            elif isinstance(llm, ChatOllama):
+                db_qna_ollama(llm, db, query)
 
             check = input("\n\nY: 계속 질문한다.\nN: 프로그램 종료\n입력: ")
 
