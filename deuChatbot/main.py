@@ -163,7 +163,7 @@ def document_embedding(docs, model, save_directory):
     :param model: 임베딩 모델 종류
     :param save_directory: 벡터저장소 저장 경로
     :param docs: 분할된 문서
-    :return: 
+    :return:
     """
 
     print("\n잠시만 기다려주세요.\n\n")
@@ -203,6 +203,17 @@ def c_text_split(corpus):
     return text_documents
 
 
+def docs_load():
+    """
+    문서 읽는 함수
+    """
+
+    with open("corpus/정시 모집요강(동의대) 전처리 결과.txt", "r", encoding="utf-8") as file:
+        loader = file.read()
+
+    return loader
+
+
 def run():
     """
     챗봇 시작
@@ -210,50 +221,49 @@ def run():
     """
 
     # 문서 업로드
-    with open("corpus/정시 모집요강(동의대) 전처리 결과.txt", "r", encoding="utf-8") as file:
-        loader = file.read()
+    loader = docs_load()
 
-        # 문서 분할
-        chunk = c_text_split(loader)
+    # 문서 분할
+    chunk = c_text_split(loader)
 
-        # 문서 임베딩 및 벡터스토어 저장
-        embedding_model_number = input(
-            "문서 임베딩에 사용할 임베딩 모델을 고르시오. 고르지 않을 경우 HuggingFaceEmbeddings 모델을 기본으로 사용합니다.\n"
-            "1: OpenAIEmbeddings()\n"
-            "2: HuggingFaceEmbeddings()\n\n "
-            "선택 번호 : ")
+    # 문서 임베딩 및 벡터스토어 저장
+    embedding_model_number = input(
+        "문서 임베딩에 사용할 임베딩 모델을 고르시오. 고르지 않을 경우 HuggingFaceEmbeddings 모델을 기본으로 사용합니다.\n"
+        "1: OpenAIEmbeddings()\n"
+        "2: HuggingFaceEmbeddings()\n\n "
+        "선택 번호 : ")
 
-        if embedding_model_number == 1:
-            model = OpenAIEmbeddings()
-        else:
-            model_name = "jhgan/ko-sbert-nli"  # 한국어 모델
-            model_kwargs = {'device': 'cpu'}  # cpu를 사용하기 위해 설정
-            encode_kwargs = {'normalize_embeddings': True}
-            model = HuggingFaceEmbeddings(
-                model_name=model_name,
-                model_kwargs=model_kwargs,
-                encode_kwargs=encode_kwargs
-            )
+    if embedding_model_number == 1:
+        model = OpenAIEmbeddings()
+    else:
+        model_name = "jhgan/ko-sbert-nli"  # 한국어 모델
+        model_kwargs = {'device': 'cpu'}  # cpu를 사용하기 위해 설정
+        encode_kwargs = {'normalize_embeddings': True}
+        model = HuggingFaceEmbeddings(
+            model_name=model_name,
+            model_kwargs=model_kwargs,
+            encode_kwargs=encode_kwargs
+        )
 
-        document_embedding(chunk, model, save_directory="./chroma_db")
+    document_embedding(chunk, model, save_directory="./chroma_db")
 
-        # 채팅에 사용할 거대언어모델(LLM) 선택
-        llm = chat_llm()
+    # 채팅에 사용할 거대언어모델(LLM) 선택
+    llm = chat_llm()
 
-        # 정보 검색
-        db = Chroma(persist_directory="./chroma_db", embedding_function=model)
-        check = 'Y'  # 0이면 질문 가능
-        while check == 'Y' or check == 'y':
-            query = input("질문을 입력하세요 : ")
+    # 정보 검색
+    db = Chroma(persist_directory="./chroma_db", embedding_function=model)
+    check = 'Y'  # 0이면 질문 가능
+    while check == 'Y' or check == 'y':
+        query = input("질문을 입력하세요 : ")
 
-            if isinstance(llm, ChatGoogleGenerativeAI):
-                db_qna_gemini(llm, db, query)
-            elif isinstance(llm, ChatOpenAI):
-                db_qna_openai(llm, db, query)
-            elif isinstance(llm, ChatOllama):
-                db_qna_ollama(llm, db, query)
+        if isinstance(llm, ChatGoogleGenerativeAI):
+            db_qna_gemini(llm, db, query)
+        elif isinstance(llm, ChatOpenAI):
+            db_qna_openai(llm, db, query)
+        elif isinstance(llm, ChatOllama):
+            db_qna_ollama(llm, db, query)
 
-            check = input("\n\nY: 계속 질문한다.\nN: 프로그램 종료\n입력: ")
+        check = input("\n\nY: 계속 질문한다.\nN: 프로그램 종료\n입력: ")
 
 
 if __name__ == "__main__":
