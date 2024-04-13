@@ -85,20 +85,20 @@ def format_docs(docs):
     return "\n\n".join(document.page_content for document in docs)
 
 
-prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """
-            You are a university admissions officer. Provide precise and courteous answers to the various users asking questions about college admissions. but Answer the question using ONLY the following context. If you don't know the answer just say you don't know. DON'T make anything up.
-            Before responding, think step by step do it.
-
-            Context: {context}
-            """,
-        ),
-        ("human", "{question}"),
-    ]
-)
+# prompt = ChatPromptTemplate.from_messages(
+#     [
+#         (
+#             "system",
+#             """
+#             You are a Dong-Eui University admissions officer. Provide precise and courteous answers to the various users asking questions about college admissions. but Answer the question using ONLY the following context. If you don't know the answer just say you don't know. DON'T make anything up.
+#             Before responding, think step by step do it.
+#
+#             Context: {context}
+#             """,
+#         ),
+#         ("human", "{question}"),
+#     ]
+# )
 
 model = st.selectbox(
     "사용할 거대언어모델(LLM)을 선택하시오.",
@@ -165,10 +165,23 @@ if file:
     if message:
         send_message(message, "human")
 
+        template = """
+                    Based on the provided context, explain the question clearly and directly, as if you were responding like an Dong-Eui University admissions office staff member.
+                    Before responding, think step by step do it.
+                    Please respond in Korean.
+
+                    {context}
+                    Question: {question}
+                    """
+
+        prompt = ChatPromptTemplate.from_template(template)
+
         chain = {
                     "context": retriever | RunnableLambda(format_docs),
                     "question": RunnablePassthrough()
                 } | prompt | llm
+
+        print(prompt)
 
         with st.chat_message("ai"):
             response = chain.invoke(message)
