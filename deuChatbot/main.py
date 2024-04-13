@@ -3,12 +3,12 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain.chat_models import ChatOpenAI, ChatOllama
-from langchain.chains import RetrievalQA
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.schema.runnable import RunnableMap
 from langchain.prompts import ChatPromptTemplate
+
+from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 
 import os
 import shutil
@@ -54,107 +54,71 @@ def chat_llm():
     return llm
 
 
-def db_qna_openai(llm, db, q):
+def format_docs(docs):
+    return "\n\n".join(document.page_content for document in docs)
+
+
+def db_qna(llm, db, query):
     """
     벡터저장소에서 질문을 검색해서 적절한 답변을 찾아서 답하도록 하는 함수
     :param llm: 거대 언어 모델
     :param db: 벡터스토어
-    :param q: 사용자 질문
+    :param query: 사용자 질문
     :return: 거대언어모델(LLM) 응답 결과
     """
 
-    # chroma 객체를 retriever를 활용할 건데 mmr 즉, 최대한 다양하게 답변을 구성할 것이다. 근데 어떤식으로 답변을 구성할 것이냐면
-    # 총 10개의 연관성있는 문서를 뽑은 다음에 최대한 다양하게 조합을 구성을 하되 세 개만 컨텍스트로 LLM에게 넘겨줘라는 것이다.
-    qa = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",  # 전처리 데이터가 현재 청크 사이즈 문제가 있어 토큰 이슈가 발생할 가능성 있음
-        retriever=db.as_retriever(
-            # docsearch에서 chroma를 저장소로 사용하는 것이 아니라 as_retriever 연관성 높은 벡터를 찾는 검색기로 사용하기 위해서 as_retriever 함수 사용
-            search_type="mmr",
-            # 벡터 저장소에서 사용자의 질문과 연관돼 있는 텍스트 청크를 뽑아오는 것인데, 거기서 연관성 높은 문서를 뽑아올 때 연관성 높은 풀 몇 개 중에서 최대한 다양하게 답변을 컨텍스트를
-            # 조합해서 llm에게 컨텍스트로 던져줘라는 것이다. 여러 가지 소스를 다양한 소스를 참고해서 LLM 답변을 얻고 싶을 때 서치타입 mmr을 선언하면 됨
-            search_kwargs={'k': 3, 'fetch_k': 10}
-            # mmr을 어떤식으로 구현할지에 대해서 구체적으로 명시해주는 부분 / 연관 있는 문서 후보군을 fetch_k개 만큼 만들고 LLM에게 최종적으로 넘길 때 k개만큼 넘기겠다
-        ),
-        return_source_documents=True
-    )
-
-    result = qa(q)
-    # print("\n\n{}".format(result))
-
-    return result
-
-
-def db_qna_gemini(llm, db, q):
-    """
-    벡터저장소에서 질문을 검색해서 적절한 답변을 찾아서 답하도록 하는 함수
-    :param llm: 거대 언어 모델
-    :param db: 벡터스토어
-    :param q: 사용자 질문
-    :return: 거대언어모델(LLM) 응답 결과
-    """
-
-    retriever = db.as_retriever(
+    db = db.as_retriever(
         search_type="mmr",
-        search_kwargs={'k': 3, 'fetch_k': 10}
+        search_kwargs={'k': 3, 'fetch_k': 10},
     )
 
-    template = """    
-        Based on the provided context, explain the question clearly and directly, as if you were responding like an admissions office staff member.
-        {context}
-        Question: {question}
-        """
+    # prompt = ChatPromptTemplate.from_messages(
+    #     [
+    #         (
+    #             "system",
+    #             """
+    #             You are a Dong-Eui University admissions officer. Provide precise and courteous answers to the various users asking questions about college admissions. but Answer the question using ONLY the following context. If you don't know the answer just say you don't know. DON'T make anything up.
+    #             Before responding, think step by step do it.
+    #
+    #             Context: {context}
+    #             """,
+    #         ),
+    #         ("human", "{question}"),
+    #     ]
+    # )
+
+    template = """
+            Based on the provided context, explain the question clearly and directly, as if you were responding like an Dong-Eui University admissions office staff member.
+            Before responding, think step by step do it.
+            Please respond in Korean.
+    
+            {context}
+            Question: {question}
+            """
 
     prompt = ChatPromptTemplate.from_template(template)
 
-    chain = RunnableMap({
-        "context": lambda x: retriever.get_relevant_documents(x['question']),
-        "question": lambda x: x['question']
-    }) | prompt | llm
+    # print(f"--------------{db}--------------")
 
-    result = chain.invoke({
-        "context": retriever.get_relevant_documents(q),
-        'question': q
-    })
-    print("\n\n{}".format(result.content))
+    # chain = RunnableMap({
+    #     "context": lambda x: db.get_relevant_documents(x['question']),
+    #     "question": lambda x: x['question']
+    # }) | prompt | llm
 
-    return result
+    # response = chain.invoke({
+    #     "context": db.get_relevant_documents(query),
+    #     'question': query
+    # })
 
+    chain = {
+                "context": db | RunnableLambda(format_docs),
+                "question": RunnablePassthrough()
+            } | prompt | llm
 
-def db_qna_ollama(llm, db, q):
-    """
-    벡터저장소에서 질문을 검색해서 적절한 답변을 찾아서 답하도록 하는 함수
-    :param llm: 거대 언어 모델
-    :param db: 벡터스토어
-    :param q: 사용자 질문
-    :return: 거대언어모델(LLM) 응답 결과
-    """
+    response = chain.invoke(query)
 
-    retriever = db.as_retriever(
-        search_type="mmr",
-        search_kwargs={'k': 3, 'fetch_k': 10}
-    )
-
-    template = """    
-        Based on the provided context, explain the question clearly and directly, as if you were responding like an admissions office staff member.
-        {context}
-        Question: {question}
-        """
-
-    prompt = ChatPromptTemplate.from_template(template)
-
-    chain = RunnableMap({
-        "context": lambda x: retriever.get_relevant_documents(x['question']),
-        "question": lambda x: x['question']
-    }) | prompt | llm
-
-    result = chain.invoke({
-        "context": retriever.get_relevant_documents(q),
-        'question': q
-    })
-    print("\n\n{}".format(result.content))
-
-    return result
+    if not isinstance(llm, ChatOpenAI):
+        print("\n\n{}".format(response.content))
 
 
 def document_embedding(docs, model, save_directory):
@@ -179,8 +143,10 @@ def document_embedding(docs, model, save_directory):
         os.environ['OPENAI_API_KEY'] = "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"  # 테스트 버전일 때
 
     print("문서 벡터화를 시작합니다. ")
-    Chroma.from_documents(docs, model, persist_directory=save_directory)
+    db = Chroma.from_documents(docs, model, persist_directory=save_directory)
     print("새로운 Chroma 데이터베이스가 생성되었습니다.\n")
+
+    return db
 
 
 def c_text_split(corpus):
@@ -245,7 +211,7 @@ def run():
             encode_kwargs=encode_kwargs
         )
 
-    document_embedding(chunk, model, save_directory="./chroma_db")
+    db = document_embedding(chunk, model, save_directory="./chroma_db")
 
     # 채팅에 사용할 거대언어모델(LLM) 선택
     llm = chat_llm()
@@ -256,15 +222,13 @@ def run():
     while check == 'Y' or check == 'y':
         query = input("질문을 입력하세요 : ")
 
-        if isinstance(llm, ChatGoogleGenerativeAI):
-            db_qna_gemini(llm, db, query)
-        elif isinstance(llm, ChatOpenAI):
-            db_qna_openai(llm, db, query)
-        elif isinstance(llm, ChatOllama):
-            db_qna_ollama(llm, db, query)
+        db_qna(llm, db, query)
 
         check = input("\n\nY: 계속 질문한다.\nN: 프로그램 종료\n입력: ")
 
 
 if __name__ == "__main__":
+    os.environ['LANGCHAIN_TRACING_V2'] = "true"
+    os.environ['LANGCHAIN_ENDPOINT'] = "https://api.smith.langchain.com"
+    os.environ['LANGCHAIN_API_KEY'] = "ls__4de168fde3cc41e69287c27236fcc1ea"
     run()
