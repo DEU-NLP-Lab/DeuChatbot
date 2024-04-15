@@ -87,12 +87,9 @@ def db_qna(llm, db, query):
     #     ]
     # )
 
-    template = """
-            Based on the provided context, explain the question clearly and directly, as if you were responding like an Dong-Eui University admissions office staff member.
-            Before responding, think step by step do it.
-            Please respond in Korean.
-    
+    template = """    
             {context}
+            
             Question: {question}
             """
 

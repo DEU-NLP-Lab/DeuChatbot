@@ -1,5 +1,5 @@
 from langchain.prompts import ChatPromptTemplate
-from langchain.document_loaders import UnstructuredFileLoader
+from langchain.document_loaders import UnstructuredFileLoader, PyPDFLoader
 from langchain.embeddings import CacheBackedEmbeddings
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
@@ -36,7 +36,7 @@ class ChatCallBackHandler(BaseCallbackHandler):
 with st.sidebar:
     file = st.file_uploader(
         "입시 정보 파일을 추가해주세요.",
-        type=["txt"]
+        type=["txt", "pdf"]
     )
 
     print(file)
@@ -124,13 +124,26 @@ def chunk_embedding(file):
 
     cache_dir = LocalFileStore(f"./.cache/embeddings/{file.name}")
 
-    c_text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
-        separator="---",
-        chunk_size=1500,
-        chunk_overlap=0,
-    )
+    c_text_splitter = None
 
-    loader = UnstructuredFileLoader(file_path)
+    loader = None
+
+    if file.type == "application/pdf":
+        c_text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+            separator="\n\n",
+            chunk_size=1500,
+            chunk_overlap=0,
+        )
+
+        loader = PyPDFLoader(file_path)
+    elif file.type == "text/plain":
+        c_text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+            separator="---",
+            chunk_size=1500,
+            chunk_overlap=0,
+        )
+        loader = UnstructuredFileLoader(file_path)
+
     docs = loader.load_and_split(text_splitter=c_text_splitter)
 
     model_name = "jhgan/ko-sbert-nli"  # 한국어 모델
@@ -146,7 +159,10 @@ def chunk_embedding(file):
 
     vectorstore = FAISS.from_documents(docs, cached_embeddings)
 
-    retriever = vectorstore.as_retriever()
+    retriever = vectorstore.as_retriever(
+        search_type="mmr",
+        search_kwargs={'k': 3, 'fetch_k': 10},
+    )
 
     return retriever
 
@@ -166,11 +182,8 @@ if file:
         send_message(message, "human")
 
         template = """
-                    Based on the provided context, explain the question clearly and directly, as if you were responding like an Dong-Eui University admissions office staff member.
-                    Before responding, think step by step do it.
-                    Please respond in Korean.
-
                     {context}
+                    
                     Question: {question}
                     """
 

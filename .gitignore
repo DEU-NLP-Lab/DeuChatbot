@@ -163,3 +163,5 @@ deuChatbot/llama-2-7b-chat.Q4_K_M.gguf
 deuChatbot/ggml-model-Q4_K_M.gguf
 deuChatbot/test.py
 deuChatbot/.idea/
+deuChatbot/test2.py
+deuChatbot/test/
