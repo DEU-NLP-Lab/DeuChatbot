@@ -24,8 +24,8 @@ def chat_llm():
 
     while True:
         model_check = input(
-            "채팅에 사용할 모델을 고르시오. 고르지 않을 경우 Google Gemini-1.5 Pro 모델을 기본으로 사용합니다.\n1: ChatOpenAI()\n2: "
-            "ChatGoogleGenerativeAI()\n3: ChatOllama(한국어 모델)\n\n 선택 번호 : ")
+            "채팅에 사용할 모델을 고르시오. 고르지 않을 경우 Google Gemini-1.5 Pro 모델을 기본으로 사용합니다.\n1: GPT-3.5\n2: "
+            "Google Gemini-Pro\n3: EEVE Korean\n\n 선택 번호 : ")
 
         if model_check in ['1', '2', '3']:
             break
@@ -49,7 +49,17 @@ def chat_llm():
             temperature=0
         )
     elif model_check == "3":
-        llm = ChatOllama(model="EEVE-Korean-10.8B:latest")
+        # llm = ChatOllama(model="EEVE-Korean-10.8B:latest")
+        llm = ChatOpenAI(
+            base_url="http://localhost:1234/v1",
+            api_key="lm-studio",
+            model="teddylee777/EEVE-Korean-Instruct-10.8B-v1.0-gguf",
+            # model="teddylee777/llama-3-8b-it-ko-chang-gguf",
+            temperature=0,
+            streaming=True,
+            callbacks=[StreamingStdOutCallbackHandler()]
+        )
+        # llm = ChatOllama(model="Llama-3:latest")
 
     return llm
 
@@ -58,7 +68,7 @@ def format_docs(docs):
     return "\n\n".join(document.page_content for document in docs)
 
 
-def db_qna(llm, db, query):
+def db_qna(llm, db, query,):
     """
     벡터저장소에서 질문을 검색해서 적절한 답변을 찾아서 답하도록 하는 함수
     :param llm: 거대 언어 모델
@@ -67,45 +77,46 @@ def db_qna(llm, db, query):
     :return: 거대언어모델(LLM) 응답 결과
     """
 
+    docs = db.similarity_search_with_relevance_scores(query, k=3, )
+
+    for doc in docs:
+        print("가장 유사한 문서:\n\n {}\n\n".format(doc[0].page_content))
+        print("문서 유사도:\n {}".format(doc[1]))
+        print("\n-------------------------")
+
     db = db.as_retriever(
-        search_type="mmr",
-        search_kwargs={'k': 3, 'fetch_k': 10},
+        # search_type="mmr",
+        # search_kwargs={'k': 3, 'fetch_k': 10},
+        search_type='similarity_score_threshold',
+        search_kwargs={'k': 3, 'score_threshold': 0.5},
     )
 
-    # prompt = ChatPromptTemplate.from_messages(
-    #     [
-    #         (
-    #             "system",
-    #             """
-    #             You are a Dong-Eui University admissions officer. Provide precise and courteous answers to the various users asking questions about college admissions. but Answer the question using ONLY the following context. If you don't know the answer just say you don't know. DON'T make anything up.
-    #             Before responding, think step by step do it.
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """
+                You are an expert AI on a question and answer task.
+                Use the "Following Context" when answering the question. If you don't know the answer, reply to the "Following Text" in the header and answer to the best of your knowledge, or if you do know the answer, answer without the "Following Text". If a question is asked in Korean, translate it to English and always answer in Korean.
+                Following Text: "주어진 정보에서 답변을 찾지는 못했지만, 제가 아는 선에서 답을 말씀드려볼게요! **틀릴 수도 있으니 교차검증은 필수입니다!**"
+                If the context is empty or you don't know the answer, tell them to contact "https://ipsi.deu.ac.kr/main.do".
+
+                Following Context: {context}
+                """,
+            ),
+            ("human", "Question: {question}"),
+        ]
+    )
+
+    # template = """
+    #         {context}
     #
-    #             Context: {context}
-    #             """,
-    #         ),
-    #         ("human", "{question}"),
-    #     ]
-    # )
-
-    template = """    
-            {context}
-            
-            Question: {question}
-            """
-
-    prompt = ChatPromptTemplate.from_template(template)
+    #         Question: {question}
+    #         """
+    #
+    # prompt = ChatPromptTemplate.from_template(template)
 
     # print(f"--------------{db}--------------")
-
-    # chain = RunnableMap({
-    #     "context": lambda x: db.get_relevant_documents(x['question']),
-    #     "question": lambda x: x['question']
-    # }) | prompt | llm
-
-    # response = chain.invoke({
-    #     "context": db.get_relevant_documents(query),
-    #     'question': query
-    # })
 
     chain = {
                 "context": db | RunnableLambda(format_docs),
@@ -199,7 +210,7 @@ def run():
     if embedding_model_number == 1:
         model = OpenAIEmbeddings()
     else:
-        model_name = "jhgan/ko-sbert-nli"  # 한국어 모델
+        model_name = "jhgan/ko-sroberta-multitask"  # 한국어 모델
         model_kwargs = {'device': 'cpu'}  # cpu를 사용하기 위해 설정
         encode_kwargs = {'normalize_embeddings': True}
         model = HuggingFaceEmbeddings(
