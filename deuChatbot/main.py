@@ -12,6 +12,7 @@ from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 
 import os
 import shutil
+from dotenv import load_dotenv
 
 
 def chat_llm():
@@ -19,8 +20,7 @@ def chat_llm():
     채팅에 사용되는 거대언어모델 생성 함수
     :return: 답변해주는 거대언어모델
     """
-
-    model_check = '2'
+    load_dotenv('.env')
 
     while True:
         model_check = input(
@@ -33,8 +33,7 @@ def chat_llm():
             print("잘못된 입력입니다. 1, 2, 3 중 하나를 선택해주세요.\n")
 
     if model_check == "1":
-        os.environ['OPENAI_API_KEY'] = "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"  # 테스트 버전일 때
-
+        os.getenv("OPENAI_API_KEY")
         # Retriever 적용
         llm = ChatOpenAI(
             model_name="gpt-3.5-turbo",
@@ -42,7 +41,7 @@ def chat_llm():
             temperature=0
         )
     elif model_check == "2":
-        os.environ['GOOGLE_API_KEY'] = "AIzaSyBZuxIG0vS-XGSm6HDyrOaxbyRayY8yXDc"  # 테스트 버전일 때
+        os.getenv("GOOGLE_API_KEY")
 
         llm = ChatGoogleGenerativeAI(
             model="gemini-pro",
@@ -51,7 +50,8 @@ def chat_llm():
     elif model_check == "3":
         # llm = ChatOllama(model="EEVE-Korean-10.8B:latest")
         llm = ChatOpenAI(
-            base_url="http://localhost:1234/v1",
+            # base_url=os.getenv("LM_URL"),
+            base_url=os.getenv("LM_LOCAL_URL"),
             api_key="lm-studio",
             model="teddylee777/EEVE-Korean-Instruct-10.8B-v1.0-gguf",
             # model="teddylee777/llama-3-8b-it-ko-chang-gguf",
@@ -77,18 +77,18 @@ def db_qna(llm, db, query,):
     :return: 거대언어모델(LLM) 응답 결과
     """
 
-    docs = db.similarity_search_with_relevance_scores(query, k=3, )
-
-    for doc in docs:
-        print("가장 유사한 문서:\n\n {}\n\n".format(doc[0].page_content))
-        print("문서 유사도:\n {}".format(doc[1]))
-        print("\n-------------------------")
+    # docs = db.similarity_search_with_relevance_scores(query, k=3, )
+    #
+    # for doc in docs:
+    #     print("가장 유사한 문서:\n\n {}\n\n".format(doc[0].page_content))
+    #     print("문서 유사도:\n {}".format(doc[1]))
+    #     print("\n-------------------------")
 
     db = db.as_retriever(
-        # search_type="mmr",
-        # search_kwargs={'k': 3, 'fetch_k': 10},
-        search_type='similarity_score_threshold',
-        search_kwargs={'k': 3, 'score_threshold': 0.5},
+        search_type="mmr",
+        search_kwargs={'k': 3, 'fetch_k': 10},
+        # search_type='similarity_score_threshold',
+        # search_kwargs={'k': 3, 'score_threshold': 0.45},
     )
 
     prompt = ChatPromptTemplate.from_messages(
@@ -96,12 +96,11 @@ def db_qna(llm, db, query,):
             (
                 "system",
                 """
-                You are an expert AI on a question and answer task.
-                Use the "Following Context" when answering the question. If you don't know the answer, reply to the "Following Text" in the header and answer to the best of your knowledge, or if you do know the answer, answer without the "Following Text". If a question is asked in Korean, translate it to English and always answer in Korean.
-                Following Text: "주어진 정보에서 답변을 찾지는 못했지만, 제가 아는 선에서 답을 말씀드려볼게요! **틀릴 수도 있으니 교차검증은 필수입니다!**"
-                If the context is empty or you don't know the answer, tell them to contact "https://ipsi.deu.ac.kr/main.do".
+                You are a specialized AI for question-and-answer tasks.
+                You must answer questions based solely on the DB-Context provided.
+                If no DB-Context is provided, you must instruct to inquire at "https://ipsi.deu.ac.kr/main.do".
 
-                Following Context: {context}
+                DB-Context: {context}
                 """,
             ),
             ("human", "Question: {question}"),
@@ -146,9 +145,7 @@ def document_embedding(docs, model, save_directory):
         print(f"디렉토리 {save_directory}가 삭제되었습니다.\n")
 
     if isinstance(model, OpenAIEmbeddings):
-        # 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
-        # os.environ['OPENAI_API_KEY'] = input('발급 받은 OpenAI API Key를 입력해주세요: ')
-        os.environ['OPENAI_API_KEY'] = "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"  # 테스트 버전일 때
+        os.getenv("OPENAI_API_KEY")
 
     print("문서 벡터화를 시작합니다. ")
     db = Chroma.from_documents(docs, model, persist_directory=save_directory)
@@ -236,7 +233,8 @@ def run():
 
 
 if __name__ == "__main__":
-    os.environ['LANGCHAIN_TRACING_V2'] = "true"
-    os.environ['LANGCHAIN_ENDPOINT'] = "https://api.smith.langchain.com"
-    os.environ['LANGCHAIN_API_KEY'] = "ls__4de168fde3cc41e69287c27236fcc1ea"
+    os.getenv("LANGCHAIN_TRACING_V2")
+    os.getenv("LANGCHAIN_ENDPOINT")
+    os.getenv("LANGCHAIN_API_KEY")
+
     run()
