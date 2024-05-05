@@ -13,6 +13,74 @@ from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 import os
 import shutil
 from dotenv import load_dotenv
+import openpyxl
+from openpyxl import load_workbook
+
+import numpy as np
+
+
+def cosine_similarity(a, b):
+    """
+    코사인 유사도를 확인하기 위한 함수
+    """
+    dot_product = np.dot(a, b)
+    norm_a = np.linalg.norm(a)
+    norm_b = np.linalg.norm(b)
+    return dot_product / (norm_a * norm_b)
+
+
+def save_qna_list(q, a, model_checker, similarity):
+    """
+    질의 응답을 엑셀 파일에 추가하는 함수 (중복 질문 제거)
+    """
+    filename = 'test_automation/qna_list.xlsx'
+
+    # model_checker 값을 모델 이름으로 변환
+    model_name = ''
+    if model_checker == '1':
+        model_name = 'GPT-3.5'
+    elif model_checker == '2':
+        model_name = 'Google Gemini-Pro'
+    elif model_checker == '3':
+        model_name = 'EEVE Korean'
+
+    try:
+        # 기존 엑셀 파일 열기
+        workbook = load_workbook(filename)
+        sheet = workbook.active
+    except FileNotFoundError:
+        # 파일이 없는 경우 새로운 엑셀 파일 생성
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet['A1'] = '거대언어모델'
+        sheet['B1'] = '유사도'
+        sheet['C1'] = '질의'
+        sheet['D1'] = '응답'
+
+    # 기존 질문 목록 가져오기
+    existing_questions = set((cell.value, sheet.cell(row=cell.row, column=1).value) for cell in sheet['C'][1:])
+
+    # 중복 질문 확인
+    if (q, model_name) not in existing_questions:
+        # 새로운 행에 데이터 추가
+        row = sheet.max_row + 1
+        sheet.cell(row=row, column=1, value=model_name)
+        sheet.cell(row=row, column=2, value=similarity)
+        sheet.cell(row=row, column=3, value=q)
+        sheet.cell(row=row, column=4, value=a)
+
+    # 거대언어모델별로 정렬
+    data = list(sheet.values)[1:]
+    data.sort(key=lambda x: (x[0], x[1]))
+
+    # 정렬된 데이터로 시트 업데이트
+    sheet.delete_rows(2, sheet.max_row)
+    for row, row_data in enumerate(data, start=2):
+        for col, value in enumerate(row_data, start=1):
+            sheet.cell(row=row, column=col, value=value)
+
+    # 엑셀 파일 저장
+    workbook.save(filename)
 
 
 def chat_llm():
@@ -44,7 +112,7 @@ def chat_llm():
         os.getenv("GOOGLE_API_KEY")
 
         llm = ChatGoogleGenerativeAI(
-            model="gemini-pro",
+            model="gemini-1.5-pro-latest",
             temperature=0
         )
     elif model_check == "3":
@@ -61,14 +129,17 @@ def chat_llm():
         )
         # llm = ChatOllama(model="Llama-3:latest")
 
-    return llm
+    if model_check not in ['1', '2', '3']:
+        model_check = '2'  # 디폴트로 구글 제미나이 사용하도록 함
+
+    return llm, model_check
 
 
 def format_docs(docs):
     return "\n\n".join(document.page_content for document in docs)
 
 
-def db_qna(llm, db, query,):
+def db_qna(llm, db, query, ):
     """
     벡터저장소에서 질문을 검색해서 적절한 답변을 찾아서 답하도록 하는 함수
     :param llm: 거대 언어 모델
@@ -126,6 +197,8 @@ def db_qna(llm, db, query,):
 
     if not isinstance(llm, ChatOpenAI):
         print("\n\n{}".format(response.content))
+
+    return response
 
 
 def document_embedding(docs, model, save_directory):
@@ -185,6 +258,39 @@ def docs_load():
     return loader
 
 
+def auto_question(llm, db, model_num, embedding_model):
+    with open("test_automation/question_list.txt", "r", encoding="utf-8") as f:
+        question_list = f.read().split("\n")
+
+    for question in question_list:
+        response = db_qna(llm, db, question)
+        
+        # 코사인 유사도 확인
+        temp_q = embedding_model.embed_query(question)
+        temp_a = embedding_model.embed_query(response.content)
+        similarity = cosine_similarity(temp_q, temp_a)
+        
+        # 파일 저장
+        save_qna_list(question, response.content, model_num, similarity)
+
+
+def manual_question(llm, db, model_num, embedding_model):
+    check = 'Y'  # 0이면 질문 가능
+    while check == 'Y' or check == 'y':
+        query = input("질문을 입력하세요 : ")
+        response = db_qna(llm, db, query)
+        
+        # 코사인 유사도 확인
+        temp_q = embedding_model.embed_query(query)
+        temp_a = embedding_model.embed_query(response.content)
+        similarity = cosine_similarity(temp_q, temp_a)
+        
+        # 파일 저장
+        save_qna_list(query, response.content, model_num, similarity)
+
+        check = input("\n\nY: 계속 질문한다.\nN: 프로그램 종료\n입력: ")
+
+
 def run():
     """
     챗봇 시작
@@ -219,17 +325,17 @@ def run():
     db = document_embedding(chunk, model, save_directory="./chroma_db")
 
     # 채팅에 사용할 거대언어모델(LLM) 선택
-    llm = chat_llm()
+    llm, model_num = chat_llm()
 
     # 정보 검색
     db = Chroma(persist_directory="./chroma_db", embedding_function=model)
-    check = 'Y'  # 0이면 질문 가능
-    while check == 'Y' or check == 'y':
-        query = input("질문을 입력하세요 : ")
 
-        db_qna(llm, db, query)
+    q_way = input("1. 질의 수동\n2. 질의 자동(실험용)\n\n사용할 방식을 선택하시오(기본값 수동): ")
 
-        check = input("\n\nY: 계속 질문한다.\nN: 프로그램 종료\n입력: ")
+    if q_way == '2':
+        auto_question(llm, db, model_num, model)
+    else:
+        manual_question(llm, db, model_num, model)
 
 
 if __name__ == "__main__":
