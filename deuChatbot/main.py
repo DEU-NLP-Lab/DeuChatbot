@@ -3,6 +3,7 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain.chat_models import ChatOpenAI, ChatOllama
+from langchain_anthropic import ChatAnthropic
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -40,9 +41,19 @@ def save_qna_list(q, a, model_checker, similarity):
     if model_checker == '1':
         model_name = 'GPT-3.5'
     elif model_checker == '2':
-        model_name = 'Google Gemini-Pro'
+        model_name = 'GPT-4'
     elif model_checker == '3':
+        model_name = 'Claude-3-sonnet-20240229'
+    elif model_checker == '4':
+        model_name = 'Claude-3-opus-20240229'
+    elif model_checker == '5':
+        model_name = 'Google Gemini-Pro'
+    elif model_checker == '6':
         model_name = 'EEVE Korean'
+    elif model_checker == '7':
+        model_name = 'Llama-3-8B'
+    elif model_checker == '8':
+        model_name = 'Qwen1.5-14B-Chat'
 
     try:
         # 기존 엑셀 파일 열기
@@ -92,13 +103,17 @@ def chat_llm():
 
     while True:
         model_check = input(
-            "채팅에 사용할 모델을 고르시오. 고르지 않을 경우 Google Gemini-1.5 Pro 모델을 기본으로 사용합니다.\n1: GPT-3.5\n2: "
-            "Google Gemini-Pro\n3: EEVE Korean\n\n 선택 번호 : ")
+            "채팅에 사용할 모델을 고르시오. 고르지 않을 경우 Google Gemini-1.5 Pro 모델을 기본으로 사용합니다.\n"
+            "1: GPT-3.5-turbo\n2: GPT-4-turbo\n"
+            "3: Claude-3-sonnet\n4: Claude-3-opus\n"
+            "5: Google Gemini-Pro\n"
+            "6: EEVE Korean\n7: Llama-3-8B\n8: Qwen1.5-14B-Chat\n\n "
+            "선택 번호 : ")
 
-        if model_check in ['1', '2', '3']:
+        if model_check in ['1', '2', '3', '4', '5', '6', '7', '8']:
             break
         else:
-            print("잘못된 입력입니다. 1, 2, 3 중 하나를 선택해주세요.\n")
+            print("잘못된 입력입니다. 1, 2, 3, 4, 5, 6 중 하나를 선택해주세요.\n")
 
     if model_check == "1":
         os.getenv("OPENAI_API_KEY")
@@ -109,27 +124,70 @@ def chat_llm():
             temperature=0
         )
     elif model_check == "2":
+        os.getenv("OPENAI_API_KEY")
+        # Retriever 적용
+        llm = ChatOpenAI(
+            model_name="gpt-4-turbo",
+            streaming=True, callbacks=[StreamingStdOutCallbackHandler()],
+            temperature=0
+        )
+    elif model_check == "3":
+        os.getenv("ANTHROPIC_API_KEY")
+        # Retriever 적용
+        llm = ChatAnthropic(
+            model_name="claude-3-sonnet-20240229",
+            streaming=True, callbacks=[StreamingStdOutCallbackHandler()],
+            temperature=0
+        )
+    elif model_check == "4":
+        os.getenv("ANTHROPIC_API_KEY")
+        # Retriever 적용
+        llm = ChatAnthropic(
+            model_name="claude-3-opus-20240229",
+            streaming=True, callbacks=[StreamingStdOutCallbackHandler()],
+            temperature=0
+        )
+    elif model_check == "5":
         os.getenv("GOOGLE_API_KEY")
 
         llm = ChatGoogleGenerativeAI(
             model="gemini-1.5-pro-latest",
             temperature=0
         )
-    elif model_check == "3":
+    elif model_check == "6":
         # llm = ChatOllama(model="EEVE-Korean-10.8B:latest")
         llm = ChatOpenAI(
             # base_url=os.getenv("LM_URL"),
             base_url=os.getenv("LM_LOCAL_URL"),
             api_key="lm-studio",
             model="teddylee777/EEVE-Korean-Instruct-10.8B-v1.0-gguf",
-            # model="teddylee777/llama-3-8b-it-ko-chang-gguf",
             temperature=0,
             streaming=True,
             callbacks=[StreamingStdOutCallbackHandler()]
         )
         # llm = ChatOllama(model="Llama-3:latest")
+    elif model_check == "7":
+        llm = ChatOpenAI(
+            base_url=os.getenv("LM_URL"),
+            # base_url=os.getenv("LM_LOCAL_URL"),
+            api_key="lm-studio",
+            model="teddylee777/llama-3-8b-it-ko-chang-gguf",
+            temperature=0,
+            streaming=True,
+            callbacks=[StreamingStdOutCallbackHandler()]
+        )
+    elif model_check == "8":
+        llm = ChatOpenAI(
+            base_url=os.getenv("LM_URL"),
+            # base_url=os.getenv("LM_LOCAL_URL"),
+            api_key="lm-studio",
+            model="Qwen/Qwen1.5-14B-Chat-GGUF",
+            temperature=0,
+            streaming=True,
+            callbacks=[StreamingStdOutCallbackHandler()]
+        )
 
-    if model_check not in ['1', '2', '3']:
+    if model_check not in ['1', '2', '3', '4', '5', '6', '7', '8']:
         model_check = '2'  # 디폴트로 구글 제미나이 사용하도록 함
 
     return llm, model_check
@@ -264,12 +322,12 @@ def auto_question(llm, db, model_num, embedding_model):
 
     for question in question_list:
         response = db_qna(llm, db, question)
-        
+
         # 코사인 유사도 확인
         temp_q = embedding_model.embed_query(question)
         temp_a = embedding_model.embed_query(response.content)
         similarity = cosine_similarity(temp_q, temp_a)
-        
+
         # 파일 저장
         save_qna_list(question, response.content, model_num, similarity)
 
@@ -279,12 +337,12 @@ def manual_question(llm, db, model_num, embedding_model):
     while check == 'Y' or check == 'y':
         query = input("질문을 입력하세요 : ")
         response = db_qna(llm, db, query)
-        
+
         # 코사인 유사도 확인
         temp_q = embedding_model.embed_query(query)
         temp_a = embedding_model.embed_query(response.content)
         similarity = cosine_similarity(temp_q, temp_a)
-        
+
         # 파일 저장
         save_qna_list(query, response.content, model_num, similarity)
 
