@@ -54,6 +54,8 @@ def save_qna_list(q, a, model_checker, similarity):
         model_name = 'Llama-3-8B'
     elif model_checker == '8':
         model_name = 'Qwen1.5-14B-Chat'
+    elif model_checker == '9':
+        model_name = 'Llama-3-MAAL-8B-Instruct-v0.1'
 
     try:
         # 기존 엑셀 파일 열기
@@ -107,13 +109,13 @@ def chat_llm():
             "1: GPT-3.5-turbo\n2: GPT-4-turbo\n"
             "3: Claude-3-sonnet\n4: Claude-3-opus\n"
             "5: Google Gemini-Pro\n"
-            "6: EEVE Korean\n7: Llama-3-8B\n8: Qwen1.5-14B-Chat\n\n "
+            "6: EEVE Korean\n7: Llama-3-8B\n8: Qwen1.5-14B-Chat\n9: Llama-3-MAAL-8B-Instruct-v0.1\n\n "
             "선택 번호 : ")
 
-        if model_check in ['1', '2', '3', '4', '5', '6', '7', '8']:
+        if model_check in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
             break
         else:
-            print("잘못된 입력입니다. 1, 2, 3, 4, 5, 6 중 하나를 선택해주세요.\n")
+            print("잘못된 입력입니다. 1, 2, 3, 4, 5, 6, 7, 8, 9 중 하나를 선택해주세요.\n")
 
     if model_check == "1":
         os.getenv("OPENAI_API_KEY")
@@ -186,8 +188,18 @@ def chat_llm():
             streaming=True,
             callbacks=[StreamingStdOutCallbackHandler()]
         )
+    elif model_check == "9":
+        llm = ChatOpenAI(
+            base_url=os.getenv("LM_URL"),
+            # base_url=os.getenv("LM_LOCAL_URL"),
+            api_key="lm-studio",
+            model="asiansoul/Llama-3-MAAL-8B-Instruct-v0.1-GGUF",
+            temperature=0,
+            streaming=True,
+            callbacks=[StreamingStdOutCallbackHandler()]
+        )
 
-    if model_check not in ['1', '2', '3', '4', '5', '6', '7', '8']:
+    if model_check not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
         model_check = '2'  # 디폴트로 구글 제미나이 사용하도록 함
 
     return llm, model_check
