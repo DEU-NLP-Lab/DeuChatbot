@@ -19,6 +19,11 @@ from openpyxl import load_workbook
 
 import numpy as np
 
+from langchain_community.document_loaders import TextLoader
+from langchain.retrievers import BM25Retriever, EnsembleRetriever
+from langchain_community.document_transformers import LongContextReorder
+from langchain_core.output_parsers import StrOutputParser
+
 
 def cosine_similarity(a, b):
     """
@@ -290,6 +295,65 @@ def format_docs(docs):
     return "\n\n".join(document.page_content for document in docs)
 
 
+def reorder_documents(docs):
+    # 재정렬
+    reordering = LongContextReorder()
+    reordered_docs = reordering.transform_documents(docs)
+    combined = format_docs(reordered_docs)
+
+    return combined
+
+
+def db_qna_v2(llm, bm_db, db, query):
+    db = db.as_retriever(
+        search_kwargs={'k': 3},
+    )
+    bm_db.k = 2  # BM25Retriever의 검색 결과 개수를 3로 설정
+
+    # 앙상블 retriever를 초기화합니다.
+    ensemble_retriever = EnsembleRetriever(
+        retrievers=[bm_db, db],
+        weights=[0.4, 0.6],
+        search_type="mmr",
+    )
+
+    # ensemble_result = ensemble_retriever.get_relevant_documents(query)
+    # bm25_result = bm_db.get_relevant_documents(query)
+    # db_result = db.get_relevant_documents(query)
+    #
+    # print("[Ensemble Retriever]\n", ensemble_result, end="\n\n")
+    # print("[BM25 Retriever]\n", bm25_result, end="\n\n")
+    # print("[db_result Retriever]\n", db_result, end="\n\n")
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """
+                You are a specialized AI for question-and-answer tasks.
+                You must answer questions based solely on the Context provided.
+                If no Context is provided, you must instruct to inquire at "https://ipsi.deu.ac.kr/main.do".
+
+                Context: {context}
+                """,
+            ),
+            ("human", "Question: {question}"),
+        ]
+    )
+
+    chain = {
+                "context": ensemble_retriever | RunnableLambda(reorder_documents),
+                "question": RunnablePassthrough()
+            } | prompt | llm | StrOutputParser()
+
+    response = chain.invoke(query)
+
+    if not isinstance(llm, ChatOpenAI):
+        print("\n\n{}".format(response))
+
+    return response
+
+
 def db_qna(llm, db, query, ):
     """
     벡터저장소에서 질문을 검색해서 적절한 답변을 찾아서 답하도록 하는 함수
@@ -307,6 +371,7 @@ def db_qna(llm, db, query, ):
     #     print("\n-------------------------")
 
     db = db.as_retriever(
+        # search_kwargs={'k': 3},
         search_type="mmr",
         search_kwargs={'k': 3, 'fetch_k': 10},
         # search_type='similarity_score_threshold',
@@ -354,7 +419,7 @@ def db_qna(llm, db, query, ):
 
 def document_embedding(docs, model, save_directory):
     """
-    OpenAI Embedding 모델을 사용하여 문서 임베딩하여 Chroma 벡터저장소(VectorStore)에 저장하는 함수
+    Embedding 모델을 사용하여 문서 임베딩하여 Chroma 벡터저장소(VectorStore)에 저장하는 함수
     :param model: 임베딩 모델 종류
     :param save_directory: 벡터저장소 저장 경로
     :param docs: 분할된 문서
@@ -378,6 +443,35 @@ def document_embedding(docs, model, save_directory):
     return db
 
 
+def document_embedding_v2(docs, model, save_directory):
+    """
+    Embedding 모델을 사용하여 문서 임베딩하여 Chroma 벡터저장소(VectorStore)에 저장하는 함수 + 앙상블 검색기 기능 추가
+    :param model: 임베딩 모델 종류
+    :param save_directory: 벡터저장소 저장 경로
+    :param docs: 분할된 문서
+    :return:
+    """
+
+    print("\n잠시만 기다려주세요.\n\n")
+
+    # 벡터저장소가 이미 존재하는지 확인
+    if os.path.exists(save_directory):
+        shutil.rmtree(save_directory)
+        print(f"디렉토리 {save_directory}가 삭제되었습니다.\n")
+
+    if isinstance(model, OpenAIEmbeddings):
+        os.getenv("OPENAI_API_KEY")
+
+    print("문서 벡터화를 시작합니다. ")
+    db = Chroma.from_documents(docs, model, persist_directory=save_directory)
+    bm_db = BM25Retriever.from_documents(
+        docs,
+    )
+    print("새로운 Chroma 데이터베이스가 생성되었습니다.\n")
+
+    return db, bm_db
+
+
 def c_text_split(corpus):
     """
     CharacterTextSplitter를 사용하여 문서를 분할하도록 하는 함수
@@ -391,9 +485,7 @@ def c_text_split(corpus):
         chunk_overlap=0,
     )
 
-    texts = c_text_splitter.split_text(corpus)
-
-    text_documents = c_text_splitter.create_documents(texts)  # document로 만들기
+    text_documents = c_text_splitter.split_documents(corpus)
 
     return text_documents
 
@@ -403,41 +495,42 @@ def docs_load():
     문서 읽는 함수
     """
 
-    with open("corpus/정시 모집요강(동의대) 전처리 결과.txt", "r", encoding="utf-8") as file:
-        loader = file.read()
+    loader = TextLoader("corpus/정시 모집요강(동의대) 전처리 결과.txt", encoding="utf-8").load()
 
     return loader
 
 
-def auto_question(llm, db, model_num, embedding_model):
+def auto_question(llm, db, bm_db, model_num, embedding_model):
     with open("test_automation/question_list.txt", "r", encoding="utf-8") as f:
         question_list = f.read().split("\n")
 
     for question in question_list:
-        response = db_qna(llm, db, question)
+        # response = db_qna(llm, db, question)
+        response = db_qna_v2(llm, bm_db, db, question)
 
         # 코사인 유사도 확인
         temp_q = embedding_model.embed_query(question)
-        temp_a = embedding_model.embed_query(response.content)
+        temp_a = embedding_model.embed_query(response)
         similarity = cosine_similarity(temp_q, temp_a)
 
         # 파일 저장
-        save_qna_list(question, response.content, model_num, similarity)
+        save_qna_list(question, response, model_num, similarity)
 
 
-def manual_question(llm, db, model_num, embedding_model):
+def manual_question(llm, db, bm_db, model_num, embedding_model):
     check = 'Y'  # 0이면 질문 가능
     while check == 'Y' or check == 'y':
         query = input("질문을 입력하세요 : ")
-        response = db_qna(llm, db, query)
+        # response = db_qna(llm, db, query)
+        response = db_qna_v2(llm, bm_db, db, query)
 
         # 코사인 유사도 확인
         temp_q = embedding_model.embed_query(query)
-        temp_a = embedding_model.embed_query(response.content)
+        temp_a = embedding_model.embed_query(response)
         similarity = cosine_similarity(temp_q, temp_a)
 
         # 파일 저장
-        save_qna_list(query, response.content, model_num, similarity)
+        save_qna_list(query, response, model_num, similarity)
 
         check = input("\n\nY: 계속 질문한다.\nN: 프로그램 종료\n입력: ")
 
@@ -473,20 +566,21 @@ def run():
             encode_kwargs=encode_kwargs
         )
 
-    db = document_embedding(chunk, model, save_directory="./chroma_db")
+    # db = document_embedding(chunk, model, save_directory="./chroma_db")
+    db, bm_db = document_embedding_v2(chunk, model, save_directory="./chroma_db")
 
     # 채팅에 사용할 거대언어모델(LLM) 선택
     llm, model_num = chat_llm()
 
     # 정보 검색
-    db = Chroma(persist_directory="./chroma_db", embedding_function=model)
+    # db = Chroma(persist_directory="./chroma_db", embedding_function=model)
 
     q_way = input("1. 질의 수동\n2. 질의 자동(실험용)\n\n사용할 방식을 선택하시오(기본값 수동): ")
 
     if q_way == '2':
-        auto_question(llm, db, model_num, model)
+        auto_question(llm, db, bm_db, model_num, model)
     else:
-        manual_question(llm, db, model_num, model)
+        manual_question(llm, db, bm_db, model_num, model)
 
 
 if __name__ == "__main__":
