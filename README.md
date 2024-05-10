@@ -1,4 +1,4 @@
-# DeuChatbot - 동의대학교 입시 챗봇
+# DeuChatbot - 입시 챗봇
 
 개발 목적
 ----------
