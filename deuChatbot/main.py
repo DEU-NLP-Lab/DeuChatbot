@@ -24,6 +24,9 @@ from langchain.retrievers import BM25Retriever, EnsembleRetriever
 from langchain_community.document_transformers import LongContextReorder
 from langchain_core.output_parsers import StrOutputParser
 
+from langchain.chains.query_constructor.base import AttributeInfo
+from langchain.retrievers.self_query.base import SelfQueryRetriever
+
 
 def cosine_similarity(a, b):
     """
@@ -304,6 +307,75 @@ def reorder_documents(docs):
     return combined
 
 
+def db_qna_v3(llm, db, query):
+    metadata_field_info = [
+        AttributeInfo(
+            name="source",
+            description="This document contains information about the College Scholastic Ability Test (CSAT) based regular admission process for Dong-Eui University.",
+            type="string",
+        ),
+    ]
+
+    document_content_description = "This document contains information about the College Scholastic Ability Test (CSAT) based regular admission process for Dong-Eui University."
+
+    self_query = SelfQueryRetriever.from_llm(
+        llm,
+        db,
+        document_content_description,
+        metadata_field_info,
+        verbose=True,
+        enable_limit=True,  # 검색 결과 제한 기능을 활성화합니다.
+        search_kwargs={'k': 3},
+    )
+
+    db = db.as_retriever(
+        search_kwargs={'k': 3},
+    )
+
+    # 앙상블 retriever를 초기화합니다.
+    ensemble_retriever = EnsembleRetriever(
+        retrievers=[self_query, db],
+        weights=[0.5, 0.5],
+        search_type="mmr",
+    )
+
+    # ensemble_result = ensemble_retriever.get_relevant_documents(query)
+    # self_query_result = self_query.get_relevant_documents(query)
+    # db_result = db.get_relevant_documents(query)
+    #
+    # print("[Ensemble Retriever]\n", ensemble_result, end="\n\n")
+    # print("[Self_Query Retriever]\n", self_query_result, end="\n\n")
+    # print("[DB Retriever]\n", db_result, end="\n\n")
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """
+                You are a specialized AI for question-and-answer tasks.
+                You must answer questions based solely on the Context provided.
+                If no Context is provided, you must instruct to inquire at "https://ipsi.deu.ac.kr/main.do".
+
+                Context: {context}
+                """,
+            ),
+            ("human", "Question: {question}"),
+        ]
+    )
+
+    chain = {
+                "context": ensemble_retriever | RunnableLambda(reorder_documents),
+                "question": RunnablePassthrough()
+            } | prompt | llm | StrOutputParser()
+
+    response = chain.invoke(query)
+
+    if not isinstance(llm, ChatOpenAI):
+        print("\n\n{}".format(response))
+
+    return response
+
+
 def db_qna_v2(llm, bm_db, db, query):
     db = db.as_retriever(
         search_kwargs={'k': 3},
@@ -384,35 +456,25 @@ def db_qna(llm, db, query, ):
                 "system",
                 """
                 You are a specialized AI for question-and-answer tasks.
-                You must answer questions based solely on the DB-Context provided.
-                If no DB-Context is provided, you must instruct to inquire at "https://ipsi.deu.ac.kr/main.do".
+                You must answer questions based solely on the Context provided.
+                If no Context is provided, you must instruct to inquire at "https://ipsi.deu.ac.kr/main.do".
 
-                DB-Context: {context}
+                Context: {context}
                 """,
             ),
             ("human", "Question: {question}"),
         ]
     )
 
-    # template = """
-    #         {context}
-    #
-    #         Question: {question}
-    #         """
-    #
-    # prompt = ChatPromptTemplate.from_template(template)
-
-    # print(f"--------------{db}--------------")
-
     chain = {
                 "context": db | RunnableLambda(format_docs),
                 "question": RunnablePassthrough()
-            } | prompt | llm
+            } | prompt | llm | StrOutputParser()
 
     response = chain.invoke(query)
 
     if not isinstance(llm, ChatOpenAI):
-        print("\n\n{}".format(response.content))
+        print("\n\n{}".format(response))
 
     return response
 
@@ -505,8 +567,9 @@ def auto_question(llm, db, bm_db, model_num, embedding_model):
         question_list = f.read().split("\n")
 
     for question in question_list:
-        # response = db_qna(llm, db, question)
-        response = db_qna_v2(llm, bm_db, db, question)
+        # response = db_qna(llm, db, question)  # 기본 검색기
+        # response = db_qna_v2(llm, bm_db, db, question)  # 앙상블 검색기 (키워드 기반 문서 검색, 의미적 유사성 기반 문서 검색)
+        response = db_qna_v3(llm, db, question)  # 앙상블 검색기 (셀프 쿼리 기반 문서 검색, 의미적 유사성 기반 문서 검색,)
 
         # 코사인 유사도 확인
         temp_q = embedding_model.embed_query(question)
@@ -521,8 +584,9 @@ def manual_question(llm, db, bm_db, model_num, embedding_model):
     check = 'Y'  # 0이면 질문 가능
     while check == 'Y' or check == 'y':
         query = input("질문을 입력하세요 : ")
-        # response = db_qna(llm, db, query)
-        response = db_qna_v2(llm, bm_db, db, query)
+        # response = db_qna(llm, db, query)  # 기본 검색기
+        # response = db_qna_v2(llm, bm_db, db, query)  # 앙상블 검색기 (키워드 기반 문서 검색, 의미적 유사성 기반 문서 검색)
+        response = db_qna_v3(llm, db, query)  # 앙상블 검색기 (셀프 쿼리 기반 문서 검색, 의미적 유사성 기반 문서 검색,)
 
         # 코사인 유사도 확인
         temp_q = embedding_model.embed_query(query)
