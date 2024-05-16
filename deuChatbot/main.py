@@ -18,6 +18,7 @@ import openpyxl
 from openpyxl import load_workbook
 
 import numpy as np
+import pandas as pd
 
 from langchain_community.document_loaders import TextLoader
 from langchain.retrievers import BM25Retriever, EnsembleRetriever
@@ -36,6 +37,80 @@ def cosine_similarity(a, b):
     norm_a = np.linalg.norm(a)
     norm_b = np.linalg.norm(b)
     return dot_product / (norm_a * norm_b)
+
+
+def save_qna_list_v2(q, a, model_answer, model_checker, similarity):
+    """
+    질의 응답을 엑셀 파일에 추가하는 함수 (중복 질문 제거)
+    """
+    filename = 'test_automation/qna_list_v2.xlsx'
+
+    # model_checker 값을 모델 이름으로 변환
+    model_name = ''
+    if model_checker == '1':
+        model_name = 'GPT-3.5'
+    elif model_checker == '2':
+        model_name = 'GPT-4'
+    elif model_checker == '3':
+        model_name = 'GPT-4o'
+    elif model_checker == '4':
+        model_name = 'Claude-3-sonnet-20240229'
+    elif model_checker == '5':
+        model_name = 'Claude-3-opus-20240229'
+    elif model_checker == '6':
+        model_name = 'Google Gemini-Pro'
+    elif model_checker == '7':
+        model_name = 'EEVE Korean'
+    elif model_checker == '8':
+        model_name = 'Llama-3-8B'
+    elif model_checker == '9':
+        model_name = 'Qwen1.5-14B-Chat'
+    elif model_checker == '10':
+        model_name = 'Llama-3-MAAL-8B-Instruct-v0.1'
+
+    try:
+        # 기존 엑셀 파일 열기
+        workbook = load_workbook(filename)
+        sheet = workbook.active
+    except FileNotFoundError:
+        # 파일이 없는 경우 새로운 엑셀 파일 생성
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet['A1'] = '거대언어모델'
+        sheet['B1'] = '유사도'
+        sheet['C1'] = '질의'
+        sheet['D1'] = '응답'
+        sheet['E1'] = '모범 응답'
+
+    # '모범 응답' 헤더 추가 (파일이 이미 존재하는 경우에도)
+    if not isinstance(sheet['E1'].value, str) or sheet['E1'].value != '모범 응답':
+        sheet['E1'] = '모범 응답'
+
+    # 기존 질문 목록 가져오기
+    existing_questions = set((cell.value, sheet.cell(row=cell.row, column=1).value) for cell in sheet['C'][1:])
+
+    # 중복 질문 확인
+    if (q, model_name) not in existing_questions:
+        # 새로운 행에 데이터 추가
+        row = sheet.max_row + 1
+        sheet.cell(row=row, column=1, value=model_name)
+        sheet.cell(row=row, column=2, value=similarity)
+        sheet.cell(row=row, column=3, value=q)
+        sheet.cell(row=row, column=4, value=a)
+        sheet.cell(row=row, column=5, value=model_answer)
+
+    # 거대언어모델별로 정렬
+    data = list(sheet.values)[1:]
+    data.sort(key=lambda x: (x[0], x[1]))
+
+    # 정렬된 데이터로 시트 업데이트
+    sheet.delete_rows(2, sheet.max_row)
+    for row, row_data in enumerate(data, start=2):
+        for col, value in enumerate(row_data, start=1):
+            sheet.cell(row=row, column=col, value=value)
+
+    # 엑셀 파일 저장
+    workbook.save(filename)
 
 
 def save_qna_list(q, a, model_checker, similarity):
@@ -227,13 +302,13 @@ def get_model_info(model_check):
         "6": {"model_name": "gemini-1.5-pro-latest", "model_class": ChatGoogleGenerativeAI},
         "7": {"model_name": "teddylee777/EEVE-Korean-Instruct-10.8B-v1.0-gguf", "model_class": ChatOpenAI,
               "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
-              # "base_url": os.getenv("LM_LOCAL_URL"), "api_key": "lm-studio"},
+        # "base_url": os.getenv("LM_LOCAL_URL"), "api_key": "lm-studio"},
         "8": {"model_name": "teddylee777/llama-3-8b-it-ko-chang-gguf", "model_class": ChatOpenAI,
               "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
         "9": {"model_name": "Qwen/Qwen1.5-14B-Chat-GGUF", "model_class": ChatOpenAI, "base_url": os.getenv("LM_URL"),
               "api_key": "lm-studio"},
         "10": {"model_name": "asiansoul/Llama-3-MAAL-8B-Instruct-v0.1-GGUF", "model_class": ChatOpenAI,
-              "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
+               "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
     }
 
     return models.get(model_check)
@@ -567,6 +642,30 @@ def docs_load():
     return loader
 
 
+def auto_question_v2(llm, db, bm_db, model_num, embedding_model):  # llm, db, bm_db, model_num, embedding_model
+
+    df = pd.read_excel("test_automation/qna.xlsx")
+
+    questions_list = df['질의'].tolist()
+    model_answers_list = df['모범 응답'].tolist()
+
+    for question, model_answer in zip(questions_list, model_answers_list):
+        pass
+        # response = db_qna(llm, db, question)  # 기본 검색기
+        # response = db_qna_v2(llm, bm_db, db, question)  # 앙상블 검색기 (키워드 기반 문서 검색, 의미적 유사성 기반 문서 검색)
+        response = db_qna_v3(llm, db, question)  # 앙상블 검색기 (셀프 쿼리 기반 문서 검색, 의미적 유사성 기반 문서 검색,)
+
+        # 코사인 유사도 확인
+        temp_model_answer = embedding_model.embed_query(model_answer)
+        temp_response = embedding_model.embed_query(response)
+        similarity = cosine_similarity(temp_model_answer, temp_response)
+        print(f"similarity: {similarity}")
+
+        # 파일 저장
+        # save_qna_list(question, response, model_num, similarity)
+        save_qna_list_v2(question, response, model_answer, model_num, similarity)
+
+
 def auto_question(llm, db, bm_db, model_num, embedding_model):
     with open("test_automation/question_list.txt", "r", encoding="utf-8") as f:
         question_list = f.read().split("\n")
@@ -647,7 +746,8 @@ def run():
     q_way = input("1. 질의 수동\n2. 질의 자동(실험용)\n\n사용할 방식을 선택하시오(기본값 수동): ")
 
     if q_way == '2':
-        auto_question(llm, db, bm_db, model_num, model)
+        # auto_question(llm, db, bm_db, model_num, model)
+        auto_question_v2(llm, db, bm_db, model_num, model)
     else:
         manual_question(llm, db, bm_db, model_num, model)
 
