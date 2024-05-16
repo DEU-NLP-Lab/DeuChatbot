@@ -358,6 +358,7 @@ def db_qna_v3(llm, db, query):
                 """
                 You are a specialized AI for question-and-answer tasks.
                 You must answer questions based solely on the Context provided.
+                For questions about predicting successful applicants, base your answers on data from either the initial successful applicants or the final enrolled students.
                 If no Context is provided, you must instruct to inquire at "https://ipsi.deu.ac.kr/main.do".
 
                 Context: {context}
