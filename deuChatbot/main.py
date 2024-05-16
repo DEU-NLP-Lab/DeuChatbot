@@ -51,18 +51,20 @@ def save_qna_list(q, a, model_checker, similarity):
     elif model_checker == '2':
         model_name = 'GPT-4'
     elif model_checker == '3':
-        model_name = 'Claude-3-sonnet-20240229'
+        model_name = 'GPT-4o'
     elif model_checker == '4':
-        model_name = 'Claude-3-opus-20240229'
+        model_name = 'Claude-3-sonnet-20240229'
     elif model_checker == '5':
-        model_name = 'Google Gemini-Pro'
+        model_name = 'Claude-3-opus-20240229'
     elif model_checker == '6':
-        model_name = 'EEVE Korean'
+        model_name = 'Google Gemini-Pro'
     elif model_checker == '7':
-        model_name = 'Llama-3-8B'
+        model_name = 'EEVE Korean'
     elif model_checker == '8':
-        model_name = 'Qwen1.5-14B-Chat'
+        model_name = 'Llama-3-8B'
     elif model_checker == '9':
+        model_name = 'Qwen1.5-14B-Chat'
+    elif model_checker == '10':
         model_name = 'Llama-3-MAAL-8B-Instruct-v0.1'
 
     try:
@@ -219,16 +221,17 @@ def get_model_info(model_check):
     models = {
         "1": {"model_name": "gpt-3.5-turbo", "model_class": ChatOpenAI},
         "2": {"model_name": "gpt-4-turbo", "model_class": ChatOpenAI},
-        "3": {"model_name": "claude-3-sonnet-20240229", "model_class": ChatAnthropic},
-        "4": {"model_name": "claude-3-opus-20240229", "model_class": ChatAnthropic},
-        "5": {"model_name": "gemini-1.5-pro-latest", "model_class": ChatGoogleGenerativeAI},
-        "6": {"model_name": "teddylee777/EEVE-Korean-Instruct-10.8B-v1.0-gguf", "model_class": ChatOpenAI,
+        "3": {"model_name": "gpt-4o", "model_class": ChatOpenAI},
+        "4": {"model_name": "claude-3-sonnet-20240229", "model_class": ChatAnthropic},
+        "5": {"model_name": "claude-3-opus-20240229", "model_class": ChatAnthropic},
+        "6": {"model_name": "gemini-1.5-pro-latest", "model_class": ChatGoogleGenerativeAI},
+        "7": {"model_name": "teddylee777/EEVE-Korean-Instruct-10.8B-v1.0-gguf", "model_class": ChatOpenAI,
               "base_url": os.getenv("LM_LOCAL_URL"), "api_key": "lm-studio"},
-        "7": {"model_name": "teddylee777/llama-3-8b-it-ko-chang-gguf", "model_class": ChatOpenAI,
+        "8": {"model_name": "teddylee777/llama-3-8b-it-ko-chang-gguf", "model_class": ChatOpenAI,
               "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
-        "8": {"model_name": "Qwen/Qwen1.5-14B-Chat-GGUF", "model_class": ChatOpenAI, "base_url": os.getenv("LM_URL"),
+        "9": {"model_name": "Qwen/Qwen1.5-14B-Chat-GGUF", "model_class": ChatOpenAI, "base_url": os.getenv("LM_URL"),
               "api_key": "lm-studio"},
-        "9": {"model_name": "asiansoul/Llama-3-MAAL-8B-Instruct-v0.1-GGUF", "model_class": ChatOpenAI,
+        "10": {"model_name": "asiansoul/Llama-3-MAAL-8B-Instruct-v0.1-GGUF", "model_class": ChatOpenAI,
               "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
     }
 
@@ -245,16 +248,16 @@ def chat_llm():
     while True:
         model_check = input(
             "채팅에 사용할 모델을 고르시오. 고르지 않을 경우 Google Gemini-1.5 Pro 모델을 기본으로 사용합니다.\n"
-            "1: GPT-3.5-turbo\n2: GPT-4-turbo\n"
-            "3: Claude-3-sonnet\n4: Claude-3-opus\n"
-            "5: Google Gemini-Pro\n"
-            "6: EEVE Korean\n7: Llama-3-8B\n8: Qwen1.5-14B-Chat\n9: Llama-3-MAAL-8B-Instruct-v0.1\n\n "
+            "1: GPT-3.5-turbo\n2: GPT-4-turbo\n3: GPT-4o\n"
+            "4: Claude-3-sonnet\n5: Claude-3-opus\n"
+            "6: Google Gemini-Pro\n"
+            "7: EEVE Korean\n8: Llama-3-8B\n9: Qwen1.5-14B-Chat\n10: Llama-3-MAAL-8B-Instruct-v0.1\n\n "
             "선택 번호 : ")
 
-        if model_check in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+        if model_check in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']:
             break
         else:
-            print("잘못된 입력입니다. 1, 2, 3, 4, 5, 6, 7, 8, 9 중 하나를 선택해주세요.\n")
+            print("잘못된 입력입니다. 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 중 하나를 선택해주세요.\n")
 
     model_info = get_model_info(model_check)
     model_class = model_info["model_class"]
