@@ -1,3 +1,5 @@
+import time
+
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.embeddings import OpenAIEmbeddings
@@ -484,6 +486,7 @@ def db_qna_v2(llm, bm_db, db, query):
                 """
                 You are a specialized AI for question-and-answer tasks.
                 You must answer questions based solely on the Context provided.
+                For questions about predicting successful applicants, base your answers on data from either the initial successful applicants or the final enrolled students.
                 If no Context is provided, you must instruct to inquire at "https://ipsi.deu.ac.kr/main.do".
 
                 Context: {context}
@@ -652,8 +655,8 @@ def auto_question_v2(llm, db, bm_db, model_num, embedding_model):  # llm, db, bm
     for question, model_answer in zip(questions_list, model_answers_list):
         pass
         # response = db_qna(llm, db, question)  # 기본 검색기
-        # response = db_qna_v2(llm, bm_db, db, question)  # 앙상블 검색기 (키워드 기반 문서 검색, 의미적 유사성 기반 문서 검색)
-        response = db_qna_v3(llm, db, question)  # 앙상블 검색기 (셀프 쿼리 기반 문서 검색, 의미적 유사성 기반 문서 검색,)
+        response = db_qna_v2(llm, bm_db, db, question)  # 앙상블 검색기 (키워드 기반 문서 검색, 의미적 유사성 기반 문서 검색)
+        # response = db_qna_v3(llm, db, question)  # 앙상블 검색기 (셀프 쿼리 기반 문서 검색, 의미적 유사성 기반 문서 검색,)
 
         # 코사인 유사도 확인
         temp_model_answer = embedding_model.embed_query(model_answer)
@@ -664,6 +667,7 @@ def auto_question_v2(llm, db, bm_db, model_num, embedding_model):  # llm, db, bm
         # 파일 저장
         # save_qna_list(question, response, model_num, similarity)
         save_qna_list_v2(question, response, model_answer, model_num, similarity)
+        # time.sleep(20)
 
 
 def auto_question(llm, db, bm_db, model_num, embedding_model):
@@ -672,8 +676,8 @@ def auto_question(llm, db, bm_db, model_num, embedding_model):
 
     for question in question_list:
         # response = db_qna(llm, db, question)  # 기본 검색기
-        # response = db_qna_v2(llm, bm_db, db, question)  # 앙상블 검색기 (키워드 기반 문서 검색, 의미적 유사성 기반 문서 검색)
-        response = db_qna_v3(llm, db, question)  # 앙상블 검색기 (셀프 쿼리 기반 문서 검색, 의미적 유사성 기반 문서 검색,)
+        response = db_qna_v2(llm, bm_db, db, question)  # 앙상블 검색기 (키워드 기반 문서 검색, 의미적 유사성 기반 문서 검색)
+        # response = db_qna_v3(llm, db, question)  # 앙상블 검색기 (셀프 쿼리 기반 문서 검색, 의미적 유사성 기반 문서 검색,)
 
         # 코사인 유사도 확인
         temp_q = embedding_model.embed_query(question)
@@ -689,8 +693,8 @@ def manual_question(llm, db, bm_db, model_num, embedding_model):
     while check == 'Y' or check == 'y':
         query = input("질문을 입력하세요 : ")
         # response = db_qna(llm, db, query)  # 기본 검색기
-        # response = db_qna_v2(llm, bm_db, db, query)  # 앙상블 검색기 (키워드 기반 문서 검색, 의미적 유사성 기반 문서 검색)
-        response = db_qna_v3(llm, db, query)  # 앙상블 검색기 (셀프 쿼리 기반 문서 검색, 의미적 유사성 기반 문서 검색,)
+        response = db_qna_v2(llm, bm_db, db, query)  # 앙상블 검색기 (키워드 기반 문서 검색, 의미적 유사성 기반 문서 검색)
+        # response = db_qna_v3(llm, db, query)  # 앙상블 검색기 (셀프 쿼리 기반 문서 검색, 의미적 유사성 기반 문서 검색,)
 
         # 코사인 유사도 확인
         temp_q = embedding_model.embed_query(query)
