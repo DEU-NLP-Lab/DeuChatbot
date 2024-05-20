@@ -168,4 +168,6 @@ deuChatbot/model_gguf
 deuChatbot/Modelfile
 deuChatbot/ModelfileLlama
 deuChatbot/test_automation/qna_list.xlsx
-deuChatbot/test_automation/qna_list_v2.xlsx
+#deuChatbot/test_automation/qna_list_v2.xlsx
+deuChatbot/test_automation/test_sorted.xlsx
+deuChatbot/test_automation/질의응답시간.xlsx

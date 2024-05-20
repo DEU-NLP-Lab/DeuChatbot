@@ -653,7 +653,6 @@ def auto_question_v2(llm, db, bm_db, model_num, embedding_model):  # llm, db, bm
     model_answers_list = df['모범 응답'].tolist()
 
     for question, model_answer in zip(questions_list, model_answers_list):
-        pass
         # response = db_qna(llm, db, question)  # 기본 검색기
         response = db_qna_v2(llm, bm_db, db, question)  # 앙상블 검색기 (키워드 기반 문서 검색, 의미적 유사성 기반 문서 검색)
         # response = db_qna_v3(llm, db, question)  # 앙상블 검색기 (셀프 쿼리 기반 문서 검색, 의미적 유사성 기반 문서 검색,)
