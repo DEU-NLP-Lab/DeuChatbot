@@ -45,7 +45,9 @@ def save_qna_list_v2(q, a, model_answer, model_checker, similarity):
     """
     질의 응답을 엑셀 파일에 추가하는 함수 (중복 질문 제거)
     """
-    filename = 'test_automation/qna_list_v2.xlsx'
+
+    # 실험 결과 파일 이름
+    filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-ada-002).xlsx'
 
     # model_checker 값을 모델 이름으로 변환
     model_name = ''
@@ -119,7 +121,7 @@ def save_qna_list(q, a, model_checker, similarity):
     """
     질의 응답을 엑셀 파일에 추가하는 함수 (중복 질문 제거)
     """
-    filename = 'test_automation/qna_list.xlsx'
+    filename = 'test_automation/qna_list_embedding_openai(text-embedding-ada-002).xlsx'
 
     # model_checker 값을 모델 이름으로 변환
     model_name = ''
@@ -726,7 +728,9 @@ def run():
         "선택 번호 : ")
 
     if embedding_model_number == 1:
-        model = OpenAIEmbeddings()
+        # model = OpenAIEmbeddings(model="text-embedding-3-small")
+        # model = OpenAIEmbeddings(model="text-embedding-3-large")
+        model = OpenAIEmbeddings(model="text-embedding-ada-002")
     else:
         model_name = "jhgan/ko-sroberta-multitask"  # 한국어 모델
         model_kwargs = {'device': 'cpu'}  # cpu를 사용하기 위해 설정
