@@ -205,8 +205,30 @@ LM_LOCAL_URL="http://localhost:1234/v1"
 - 오버랩 조절 실험
 
 ### 7.3) Embedding
-- 임베딩 모델 종류 늘이기
-- 임베딩 모델별 성능 비교 (한국어, 정형데이터에 최적인 임베딩 모델 찾기)
+임베딩 모델별 성능 비교 (한국어, 정형데이터에 최적인 임베딩 모델 찾기)
+- OpenAIEmbedding
+  - text-embedding-3-small
+  - text-embedding-3-large
+  - text-embedding-ada-002
+- HuggingFaceEmbedding
+  - beomi
+    - KcELECTRA-base
+    - KcELECTRA-small
+    - kcbert-base
+  - jhgan
+    - ko-sroberta-multitask
+    - ko-sbert-multitask
+    - ko-sroberta-nli
+    - ko-sbert-nli
+    - ko-sroberta-sts
+    - ko-sbert-sts
+  - Dongjin-kr
+    - ko-reranker
+  - BM-K
+    - KoSimCSE-roberta-multitask 
+  - sentence-transformers
+    - paraphrase-multilingual-MiniLM-L12-v2
+    - paraphrase-multilingual-mpnet-base-v2
 
 ### 7.4) Retriever
 기본 검색기부터 다양한 검색기를 추가했을 때 성능 변화를 확인하기 위한 실험
