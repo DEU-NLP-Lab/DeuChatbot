@@ -1,6 +1,7 @@
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.embeddings import OpenAIEmbeddings
+from langchain_upstage import UpstageEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
@@ -29,11 +30,27 @@ from langchain.chains.query_constructor.base import AttributeInfo
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 
 from typing import List, Tuple
+import time
 
 
 class ChatBotSystem:
     def __init__(self):
         self.system = "ChatBotSystem"
+
+    def load_env(self):
+        load_dotenv('.env')
+
+        os.getenv("LANGCHAIN_TRACING_V2")
+        os.getenv("LANGCHAIN_ENDPOINT")
+        os.getenv("LANGCHAIN_API_KEY")
+
+        os.getenv("OPENAI_API_KEY")
+        os.getenv("ANTHROPIC_API_KEY")
+        os.getenv("GOOGLE_API_KEY")
+        os.getenv("UPSTAGE_API_KEY")
+
+        os.getenv("LM_URL")
+        os.getenv("LM_LOCAL_URL")
 
     def docs_load(self) -> List[str]:
         """
@@ -68,18 +85,50 @@ class ChatBotSystem:
         return text_documents
 
     def embedding_model_select_save(self):
+        """
+        임베딩 모델을 선택하고 저장하는 함수
+        """
         embedding_model_number = input(
             "문서 임베딩에 사용할 임베딩 모델을 고르시오. 고르지 않을 경우 HuggingFaceEmbeddings 모델을 기본으로 사용합니다.\n"
             "1: OpenAIEmbeddings()\n"
-            "2: HuggingFaceEmbeddings()\n\n "
+            "2: UpstageEmbeddings()\n"
+            "3: HuggingFaceEmbeddings()\n\n "
             "선택 번호 : ")
 
-        if embedding_model_number == 1:
-            # model = OpenAIEmbeddings(model="text-embedding-3-small")
-            # model = OpenAIEmbeddings(model="text-embedding-3-large")
-            model = OpenAIEmbeddings(model="text-embedding-ada-002")
+        if embedding_model_number == '1':
+            # model = OpenAIEmbeddings(
+            #     openai_api_key=os.getenv("OPENAI_API_KEY"),
+            #     model="text-embedding-3-small"
+            # )
+            model = OpenAIEmbeddings(
+                openai_api_key=os.getenv("OPENAI_API_KEY"),
+                model="text-embedding-3-large"
+            )
+            # model = OpenAIEmbeddings(
+            #     # openai_api_key=os.getenv("OPENAI_API_KEY"),
+            #     model="text-embedding-ada-002"
+            # )
+        elif embedding_model_number == '2':
+            print("업스테이지")
+            model = UpstageEmbeddings()
         else:
-            model_name = "jhgan/ko-sroberta-multitask"  # 한국어 모델
+            # model_name = "beomi/KcELECTRA-base"  # 한국어 모델
+            # model_name = "beomi/kcbert-base"  # 한국어 모델
+
+            # model_name = "jhgan/ko-sroberta-multitask"  # 한국어 모델
+            # model_name = "jhgan/ko-sbert-multitask"  # 한국어 모델
+            # model_name = "jhgan/ko-sroberta-nli"  # 한국어 모델
+            # model_name = "jhgan/ko-sbert-nli"  # 한국어 모델
+            # model_name = "jhgan/ko-sroberta-sts"  # 한국어 모델
+            # model_name = "jhgan/ko-sbert-sts"  # 한국어 모델
+
+            # model_name = "Dongjin-kr/ko-reranker"  # 한국어 모델
+
+            # model_name = "BM-K/KoSimCSE-roberta-multitask"  # 한국어 모델
+
+            # model_name = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+            model_name = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+
             model_kwargs = {'device': 'cpu'}  # cpu를 사용하기 위해 설정
             encode_kwargs = {'normalize_embeddings': True}
             model = HuggingFaceEmbeddings(
@@ -89,31 +138,6 @@ class ChatBotSystem:
             )
 
         return model
-
-    def document_embedding(self, docs: List[str], model, save_directory: str):
-        """
-        Embedding 모델을 사용하여 문서 임베딩하여 Chroma 벡터저장소(VectorStore)에 저장하는 함수
-        :param model: 임베딩 모델 종류
-        :param save_directory: 벡터저장소 저장 경로
-        :param docs: 분할된 문서
-        :return:
-        """
-
-        print("\n잠시만 기다려주세요.\n\n")
-
-        # 벡터저장소가 이미 존재하는지 확인
-        if os.path.exists(save_directory):
-            shutil.rmtree(save_directory)
-            print(f"디렉토리 {save_directory}가 삭제되었습니다.\n")
-
-        if isinstance(model, OpenAIEmbeddings):
-            os.getenv("OPENAI_API_KEY")
-
-        print("문서 벡터화를 시작합니다. ")
-        db = Chroma.from_documents(docs, model, persist_directory=save_directory)
-        print("새로운 Chroma 데이터베이스가 생성되었습니다.\n")
-
-        return db
 
     def document_embedding_v2(self, docs: List[str], model, save_directory: str) -> Tuple:
         """
@@ -130,9 +154,6 @@ class ChatBotSystem:
         if os.path.exists(save_directory):
             shutil.rmtree(save_directory)
             print(f"디렉토리 {save_directory}가 삭제되었습니다.\n")
-
-        if isinstance(model, OpenAIEmbeddings):
-            os.getenv("OPENAI_API_KEY")
 
         print("문서 벡터화를 시작합니다. ")
         db = Chroma.from_documents(docs, model, persist_directory=save_directory)
@@ -313,9 +334,9 @@ class ChatBotSystem:
         :param query: 사용자 질문
         """
         db = db.as_retriever(
-            search_kwargs={'k': 3},
+            search_kwargs={'k': 2},
         )
-        bm_db.k = 2  # BM25Retriever의 검색 결과 개수를 3로 설정
+        bm_db.k = 1  # BM25Retriever의 검색 결과 개수를 3로 설정
 
         # 앙상블 retriever를 초기화합니다.
         ensemble_retriever = EnsembleRetriever(
@@ -419,7 +440,30 @@ class ExperimentAutomation:
         """
 
         # 실험 결과 파일 이름
-        filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-ada-002).xlsx'
+        # OpenAIEmbeddings
+        # filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-3-small).xlsx'
+        # filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-3-large).xlsx'
+        # filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-ada-002).xlsx'
+
+        # filename = 'test_automation/qna_list_v2_embedding_upstage(solar-embedding-1-large).xlsx'
+
+        # HuggingFaceEmbeddings
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface(beomi_KcELECTRA_base).xlsx'
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface(beomi_kcbert_base).xlsx'
+
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sroberta_multitask).xlsx'
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sbert_multitask).xlsx'
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sroberta_nli).xlsx'
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sbert_nli).xlsx'
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sroberta_sts).xlsx'
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sbert_sts).xlsx'
+
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface(Dongjin-kr_ko_reranker).xlsx'
+
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface(BM-K_KoSimCSE_roberta_multitask).xlsx'
+
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface(sentence-transformers_paraphrase_multilingual_MiniLM_L12_v2).xlsx'
+        filename = 'test_automation/qna_list_v2_embedding_huggingface(sentence-transformers_paraphrase_multilingual_mpnet_base_v2).xlsx'
 
         # model_checker 값을 모델 이름으로 변환
         model_name = ''
@@ -539,6 +583,9 @@ def run():
 
     chatbot = ChatBotSystem()
 
+    # 환경변수 로드
+    chatbot.load_env()
+
     # 문서 업로드
     loader = chatbot.docs_load()
 
@@ -564,8 +611,4 @@ def run():
 
 
 if __name__ == "__main__":
-    os.getenv("LANGCHAIN_TRACING_V2")
-    os.getenv("LANGCHAIN_ENDPOINT")
-    os.getenv("LANGCHAIN_API_KEY")
-
     run()
