@@ -100,19 +100,19 @@ class ChatBotSystem:
             #     openai_api_key=os.getenv("OPENAI_API_KEY"),
             #     model="text-embedding-3-small"
             # )
+            # model = OpenAIEmbeddings(
+            #     openai_api_key=os.getenv("OPENAI_API_KEY"),
+            #     model="text-embedding-3-large"
+            # )
             model = OpenAIEmbeddings(
                 openai_api_key=os.getenv("OPENAI_API_KEY"),
-                model="text-embedding-3-large"
+                model="text-embedding-ada-002"
             )
-            # model = OpenAIEmbeddings(
-            #     # openai_api_key=os.getenv("OPENAI_API_KEY"),
-            #     model="text-embedding-ada-002"
-            # )
         elif embedding_model_number == '2':
             print("업스테이지")
             model = UpstageEmbeddings()
         else:
-            # model_name = "beomi/KcELECTRA-base"  # 한국어 모델
+            model_name = "beomi/KcELECTRA-base"  # 한국어 모델
             # model_name = "beomi/kcbert-base"  # 한국어 모델
 
             # model_name = "jhgan/ko-sroberta-multitask"  # 한국어 모델
@@ -127,7 +127,7 @@ class ChatBotSystem:
             # model_name = "BM-K/KoSimCSE-roberta-multitask"  # 한국어 모델
 
             # model_name = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-            model_name = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+            # model_name = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
 
             model_kwargs = {'device': 'cpu'}  # cpu를 사용하기 위해 설정
             encode_kwargs = {'normalize_embeddings': True}
@@ -448,7 +448,7 @@ class ExperimentAutomation:
         # filename = 'test_automation/qna_list_v2_embedding_upstage(solar-embedding-1-large).xlsx'
 
         # HuggingFaceEmbeddings
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface(beomi_KcELECTRA_base).xlsx'
+        filename = 'test_automation/qna_list_v2_embedding_huggingface(beomi_KcELECTRA_base).xlsx'
         # filename = 'test_automation/qna_list_v2_embedding_huggingface(beomi_kcbert_base).xlsx'
 
         # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sroberta_multitask).xlsx'
@@ -463,7 +463,7 @@ class ExperimentAutomation:
         # filename = 'test_automation/qna_list_v2_embedding_huggingface(BM-K_KoSimCSE_roberta_multitask).xlsx'
 
         # filename = 'test_automation/qna_list_v2_embedding_huggingface(sentence-transformers_paraphrase_multilingual_MiniLM_L12_v2).xlsx'
-        filename = 'test_automation/qna_list_v2_embedding_huggingface(sentence-transformers_paraphrase_multilingual_mpnet_base_v2).xlsx'
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface(sentence-transformers_paraphrase_multilingual_mpnet_base_v2).xlsx'
 
         # model_checker 값을 모델 이름으로 변환
         model_name = ''
