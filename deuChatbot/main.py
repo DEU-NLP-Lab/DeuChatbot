@@ -1,4 +1,4 @@
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import CharacterTextSplitter, KonlpyTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.embeddings import OpenAIEmbeddings
 from langchain_upstage import UpstageEmbeddings
@@ -78,7 +78,17 @@ class ChatBotSystem:
             separator="---",
             chunk_size=1500,
             chunk_overlap=0,
+            # encoding_name="cl100k_base",  # gpt-4
+            encoding_name="o200k_base"  # gpt-4o
         )
+
+        # c_text_splitter = KonlpyTextSplitter.from_tiktoken_encoder(
+        #     encoding_name="o200k_base",  # gpt-4o
+        #     # encoding_name=""cl100k_base"",  # gpt-4
+        #     separator="---",
+        #     chunk_size=1500,
+        #     chunk_overlap=0
+        # )
 
         text_documents = c_text_splitter.split_documents(corpus)
 
@@ -96,26 +106,26 @@ class ChatBotSystem:
             "선택 번호 : ")
 
         if embedding_model_number == '1':
-            # model = OpenAIEmbeddings(
-            #     openai_api_key=os.getenv("OPENAI_API_KEY"),
-            #     model="text-embedding-3-small"
-            # )
+            model = OpenAIEmbeddings(
+                openai_api_key=os.getenv("OPENAI_API_KEY"),
+                model="text-embedding-3-small"
+            )
             # model = OpenAIEmbeddings(
             #     openai_api_key=os.getenv("OPENAI_API_KEY"),
             #     model="text-embedding-3-large"
             # )
-            model = OpenAIEmbeddings(
-                openai_api_key=os.getenv("OPENAI_API_KEY"),
-                model="text-embedding-ada-002"
-            )
+            # model = OpenAIEmbeddings(
+            #     openai_api_key=os.getenv("OPENAI_API_KEY"),
+            #     model="text-embedding-ada-002"
+            # )
         elif embedding_model_number == '2':
             print("업스테이지")
             model = UpstageEmbeddings()
         else:
-            model_name = "beomi/KcELECTRA-base"  # 한국어 모델
+            # model_name = "beomi/KcELECTRA-base"  # 한국어 모델
             # model_name = "beomi/kcbert-base"  # 한국어 모델
 
-            # model_name = "jhgan/ko-sroberta-multitask"  # 한국어 모델
+            model_name = "jhgan/ko-sroberta-multitask"  # 한국어 모델
             # model_name = "jhgan/ko-sbert-multitask"  # 한국어 모델
             # model_name = "jhgan/ko-sroberta-nli"  # 한국어 모델
             # model_name = "jhgan/ko-sbert-nli"  # 한국어 모델
@@ -341,7 +351,7 @@ class ChatBotSystem:
         # 앙상블 retriever를 초기화합니다.
         ensemble_retriever = EnsembleRetriever(
             retrievers=[bm_db, db],
-            weights=[0.4, 0.6],
+            weights=[0.3, 0.7],
             search_type="mmr",
         )
 
@@ -441,15 +451,19 @@ class ExperimentAutomation:
 
         # 실험 결과 파일 이름
         # OpenAIEmbeddings
-        # filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-3-small).xlsx'
+        # filename = 'test_automation/qna_list_v2_embedding_openai_koNLPyTextSplitter(text-embedding-3-small).xlsx'
+
+        filename = 'test_automation/qna_list_v2_embedding_openai_ChractorTextSplitter(text-embedding-3-small).xlsx'
         # filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-3-large).xlsx'
         # filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-ada-002).xlsx'
 
         # filename = 'test_automation/qna_list_v2_embedding_upstage(solar-embedding-1-large).xlsx'
 
         # HuggingFaceEmbeddings
-        filename = 'test_automation/qna_list_v2_embedding_huggingface(beomi_KcELECTRA_base).xlsx'
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface(beomi_KcELECTRA_base).xlsx'
         # filename = 'test_automation/qna_list_v2_embedding_huggingface(beomi_kcbert_base).xlsx'
+
+        # filename = 'test_automation/qna_list_v2_embedding_huggingface_koNLPyTextSplitter(jhgan_ko_sroberta_multitask).xlsx'
 
         # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sroberta_multitask).xlsx'
         # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sbert_multitask).xlsx'

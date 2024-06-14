@@ -7,7 +7,7 @@ import os
 from huggingface_hub import HfApi
 from langchain_core.pydantic_v1 import BaseModel, Field
 
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import CharacterTextSplitter, KonlpyTextSplitter
 from langchain_community.document_loaders import TextLoader
 
 from langchain_core.prompts import PromptTemplate
@@ -16,6 +16,8 @@ from langchain_openai import ChatOpenAI
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 from datasets import load_dataset
+
+import tiktoken
 
 
 def load_env():
@@ -47,6 +49,13 @@ def docs_load() -> List[str]:
         return []
 
 
+def tiktoken_len(text):
+    # tokenizer = tiktoken.get_encoding("cl100k_base")  # gpt-4
+    tokenizer = tiktoken.get_encoding("o200k_base")  # gpt-4o
+    tokens = tokenizer.encode(text)
+    return len(tokens)
+
+
 def c_text_split(corpus: List[str]) -> List[str]:
     """
     CharacterTextSplitter를 사용하여 문서를 분할하도록 하는 함수
@@ -54,13 +63,25 @@ def c_text_split(corpus: List[str]) -> List[str]:
     :return: 분리된 청크
     """
 
-    c_text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+    # c_text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+    #     encoding_name="o200k_base",  # gpt-4o
+    #     # encoding_name=""cl100k_base"",  # gpt-4
+    #     separator="---",
+    #     chunk_size=1500,
+    #     chunk_overlap=0
+    # )
+
+    c_text_splitter = KonlpyTextSplitter.from_tiktoken_encoder(
+        encoding_name="o200k_base",  # gpt-4o
+        # encoding_name=""cl100k_base"",  # gpt-4
         separator="---",
         chunk_size=1500,
-        chunk_overlap=0,
+        chunk_overlap=0
     )
 
     text_documents = c_text_splitter.split_documents(corpus)
+
+    print(f"chunk len: {len(text_documents)}")
 
     return text_documents
 
@@ -195,25 +216,30 @@ def generations(text_documents):
 
 
 def save_file(qa_pair_list):
-    with open("test_automation/qa_pair_v2.jsonl", "w", encoding="utf-8") as f:
+    print(f"qa_pair_list: {qa_pair_list}")
+
+    file_name = "test_automation/KoNLPyTextSplitter_o200k_base_qa_pair_v1.jsonl"
+
+    with open(file_name, "w", encoding="utf-8") as f:
         for qa in qa_pair_list:
             # qa 형식이 딕셔너리인 경우
             if isinstance(qa, dict):
                 qa_modified = {
-                    "instruction": qa["QUESTION"],
+                    "instruction": qa.get("QUESTION", qa.get("question", "")),
                     "input": "",
-                    "output": qa["ANSWER"],
+                    "output": qa.get("ANSWER", qa.get("answer", ""))
                 }
+                f.write(json.dumps(qa_modified, ensure_ascii=False) + "\n")
             # qa 형식이 list인 경우
             elif isinstance(qa, list):
                 for q_a in qa:
                     qa_modified = {
-                        "instruction": q_a["QUESTION"],
+                        "instruction": q_a.get("QUESTION", q_a.get("question", "")),
                         "input": "",
-                        "output": q_a["ANSWER"],
+                        "output": q_a.get("ANSWER", q_a.get("answer", ""))
                     }
 
-            f.write(json.dumps(qa_modified, ensure_ascii=False) + "\n")
+                    f.write(json.dumps(qa_modified, ensure_ascii=False) + "\n")
 
 
 def huggingface_upload():
@@ -252,13 +278,13 @@ def run():
         print(text_document)
 
     # 질문 생성
-    # qa_pair_list = generations(text_documents)
+    qa_pair_list = generations(text_documents)
 
     # 질의응답 저장
-    # save_file(qa_pair_list)
+    save_file(qa_pair_list)
 
     # 허깅페이스 업로드
-    huggingface_upload()
+    # huggingface_upload()
 
 
 if __name__ == "__main__":
