@@ -585,22 +585,17 @@ class ExperimentAutomation:
         @param overlap_size: 문서 분할기의 오버랩 사이즈
         """
 
+        embedding_model_name = embedding_model_name.replace('/', '_')
+        filename = f'research_result/{embedding_model_name}_({chunk_size}_{overlap_size})_RecursiveCharacterTextSplitter.xlsx'
+        # filename = f'research_result/{embedding_model_name}_({chunk_size}_{overlap_size})_CharacterTextSplitter.xlsx'
+        print(f"filename: {filename}")
         print("-------------------")
-        print(f"embedding_model_name: {embedding_model_name}")
-        print(f"q: {q}")
-        print(f"a: {a}")
-        print(f"model_answer: {model_answer}")
-        print(f"model_checker: {model_checker}")
-        print(f"similarity: {similarity}")
-        print("-------------------")
-
-        filename = 'test_automation/qna_list_v2_embedding_openai_koNLPyTextSplitter(text-embedding-3-small).xlsx'
 
         # 실험 결과 파일 이름
         # OpenAIEmbeddings
         # filename = 'test_automation/qna_list_v2_embedding_openai_koNLPyTextSplitter(text-embedding-3-small).xlsx'
 
-        filename = 'test_automation/qna_list_v2_embedding_openai_ChractorTextSplitter(text-embedding-3-small).xlsx'
+        # filename = 'test_automation/qna_list_v2_embedding_openai_ChractorTextSplitter(text-embedding-3-small).xlsx'
         # filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-3-large).xlsx'
         # filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-ada-002).xlsx'
 
