@@ -1,4 +1,4 @@
-from langchain.text_splitter import CharacterTextSplitter, KonlpyTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter, CharacterTextSplitter, KonlpyTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.embeddings import OpenAIEmbeddings
 from langchain_upstage import UpstageEmbeddings
@@ -74,10 +74,52 @@ class ChatBotSystem:
         :return: 분리된 청크
         """
 
+        # 청크 사이즈 선택
+        chunk_size_number = input("chunk_size를 선택해주세요. 기본값은 1500입니다.\n"
+                                  "1: 1500\n"
+                                  "2: 2000\n"
+                                  "3: 2500\n"
+                                  "4: 3000\n"
+                                  "5: 3500\n"
+                                  "6: 4000\n\n"
+                                  "선택 번호: ")
+
+        chunk_size_checker = {
+            '1': 1500,
+            '2': 2000,
+            '3': 2500,
+            '4': 3000,
+            '5': 3500,
+            '6': 4000
+        }
+
+        chunk_size = chunk_size_checker.get(chunk_size_number, 1500)
+
+        # 오버랩 사이즈 선택
+        overlap_size_number = input("chunk_overlap를 선택해주세요. 기본값은 0입니다.\n"
+                                    "1: 0\n"
+                                    "2: 100\n"
+                                    "3: 200\n"
+                                    "4: 300\n"
+                                    "5: 400\n"
+                                    "6: 500\n\n"
+                                    "선택 번호: ")
+
+        overlap_size_checker = {
+            '1': 0,
+            '2': 100,
+            '3': 200,
+            '4': 300,
+            '5': 400,
+            '6': 500
+        }
+
+        overlap_size = overlap_size_checker.get(overlap_size_number, 0)
+
         c_text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
             separator="---",
-            chunk_size=1500,
-            chunk_overlap=0,
+            chunk_size=chunk_size,
+            chunk_overlap=overlap_size,
             # encoding_name="cl100k_base",  # gpt-4
             encoding_name="o200k_base"  # gpt-4o
         )
@@ -94,6 +136,67 @@ class ChatBotSystem:
 
         return text_documents
 
+    def rc_text_split(self, corpus: List[str]) -> List[str]:
+        """
+        RecursiveCharacterTextSplitter를 사용하여 문서를 분할하도록 하는 함수
+        :param corpus: 전처리 완료된 말뭉치
+        :return: 분리된 청크
+        """
+
+        # 청크 사이즈 선택
+        chunk_size_number = input("chunk_size를 선택해주세요. 기본값은 1500입니다.\n"
+                                  "1: 1500\n"
+                                  "2: 2000\n"
+                                  "3: 2500\n"
+                                  "4: 3000\n"
+                                  "5: 3500\n"
+                                  "6: 4000\n\n"
+                                  "선택 번호: ")
+
+        chunk_size_checker = {
+            '1': 1500,
+            '2': 2000,
+            '3': 2500,
+            '4': 3000,
+            '5': 3500,
+            '6': 4000
+        }
+
+        chunk_size = chunk_size_checker.get(chunk_size_number, 1500)
+
+        # 오버랩 사이즈 선택
+        overlap_size_number = input("chunk_overlap를 선택해주세요. 기본값은 0입니다.\n"
+                                    "1: 0\n"
+                                    "2: 100\n"
+                                    "3: 200\n"
+                                    "4: 300\n"
+                                    "5: 400\n"
+                                    "6: 500\n\n"
+                                    "선택 번호: ")
+
+        overlap_size_checker = {
+            '1': 0,
+            '2': 100,
+            '3': 200,
+            '4': 300,
+            '5': 400,
+            '6': 500
+        }
+
+        overlap_size = overlap_size_checker.get(overlap_size_number, 0)
+
+        rc_text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+            separators=["---", "\n\n", "\n"],
+            chunk_size=chunk_size,
+            chunk_overlap=overlap_size,
+            model_name="gpt-4o"  # o200k_base
+            # model_name="gpt-4"  # cl100k_base
+        )
+
+        text_documents = rc_text_splitter.split_documents(corpus)
+
+        return text_documents, chunk_size, overlap_size
+
     def embedding_model_select_save(self):
         """
         임베딩 모델을 선택하고 저장하는 함수
@@ -106,38 +209,63 @@ class ChatBotSystem:
             "선택 번호 : ")
 
         if embedding_model_number == '1':
+            models = {
+                '1': "text-embedding-3-small",
+                '2': "text-embedding-3-large",
+                '3': "text-embedding-ada-002"
+            }
+
+            embedding_model_number = input("사용할 OpenAI Embedding Model을 선택하시오. 기본으로 text-embedding-3-small 모델을 사용합니다.\n"
+                                           "1: text-embedding-3-small\n"
+                                           "2: text-embedding-3-large\n"
+                                           "3: text-embedding-ada-002\n\n"
+                                           "선택 번호: ")
+
+            model_name = models.get(embedding_model_number, "text-embedding-3-small")
+
             model = OpenAIEmbeddings(
                 openai_api_key=os.getenv("OPENAI_API_KEY"),
-                model="text-embedding-3-small"
+                model=model_name
             )
-            # model = OpenAIEmbeddings(
-            #     openai_api_key=os.getenv("OPENAI_API_KEY"),
-            #     model="text-embedding-3-large"
-            # )
-            # model = OpenAIEmbeddings(
-            #     openai_api_key=os.getenv("OPENAI_API_KEY"),
-            #     model="text-embedding-ada-002"
-            # )
         elif embedding_model_number == '2':
-            print("업스테이지")
-            model = UpstageEmbeddings()
+            model_name = "solar-embedding-1-large"
+            model = UpstageEmbeddings(
+                api_key=os.getenv("UPSTAGE_API_KEY"),
+                model=model_name
+            )
         else:
-            # model_name = "beomi/KcELECTRA-base"  # 한국어 모델
-            # model_name = "beomi/kcbert-base"  # 한국어 모델
+            models = {
+                '1': "beomi/KcELECTRA-base",
+                '2': "beomi/kcbert-base",
+                '3': "jhgan/ko-sroberta-multitask",
+                '4': "jhgan/ko-sbert-multitask",
+                '5': "jhgan/ko-sroberta-nli",
+                '6': "jhgan/ko-sbert-nli",
+                '7': "jhgan/ko-sroberta-sts",
+                '8': "jhgan/ko-sbert-sts",
+                '9': "Dongjin-kr/ko-reranker",
+                '10': "BM-K/KoSimCSE-roberta-multitask",
+                '11': "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+                '12': "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+            }
 
-            model_name = "jhgan/ko-sroberta-multitask"  # 한국어 모델
-            # model_name = "jhgan/ko-sbert-multitask"  # 한국어 모델
-            # model_name = "jhgan/ko-sroberta-nli"  # 한국어 모델
-            # model_name = "jhgan/ko-sbert-nli"  # 한국어 모델
-            # model_name = "jhgan/ko-sroberta-sts"  # 한국어 모델
-            # model_name = "jhgan/ko-sbert-sts"  # 한국어 모델
+            embedding_model_number = input(
+                "사용할 HuggingFace Embedding Model을 선택하시오. 기본으로 jhgan/ko-sroberta-multitask 모델을 사용합니다.\n"
+                "1: beomi/KcELECTRA-base\n"
+                "2: beomi/kcbert-base\n"
+                "3: jhgan/ko-sroberta-multitask\n"
+                "4: jhgan/ko-sbert-multitask\n"
+                "5: jhgan/ko-sroberta-nli\n"
+                "6: jhgan/ko-sbert-nli\n"
+                "7: jhgan/ko-sroberta-sts\n"
+                "8: jhgan/ko-sbert-sts\n"
+                "9: Dongjin-kr/ko-reranker\n"
+                "10: BM-K/KoSimCSE-roberta-multitask\n"
+                "11: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2\n"
+                "12: sentence-transformers/paraphrase-multilingual-mpnet-base-v2\n\n"
+                "선택 번호: ")
 
-            # model_name = "Dongjin-kr/ko-reranker"  # 한국어 모델
-
-            # model_name = "BM-K/KoSimCSE-roberta-multitask"  # 한국어 모델
-
-            # model_name = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-            # model_name = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+            model_name = models.get(embedding_model_number, "jhgan/ko-sroberta-multitask")
 
             model_kwargs = {'device': 'cpu'}  # cpu를 사용하기 위해 설정
             encode_kwargs = {'normalize_embeddings': True}
@@ -147,7 +275,8 @@ class ChatBotSystem:
                 encode_kwargs=encode_kwargs
             )
 
-        return model
+        # return model
+        return model, model_name
 
     def document_embedding_v2(self, docs: List[str], model, save_directory: str) -> Tuple:
         """
@@ -443,16 +572,30 @@ class ExperimentAutomation:
         norm_b = np.linalg.norm(b)
         return dot_product / (norm_a * norm_b)
 
-    def save_qna_list_v2(self, q, a, model_answer, model_checker, similarity):
+    def save_qna_list_v2(self, q, a, model_answer, model_checker, similarity, embedding_model_name, chunk_size, overlap_size):
         """
         질의 응답을 엑셀 파일에 추가하는 함수 (중복 질문 제거)
+        @param q: 질의
+        @param a: 모범 응답
+        @param model_answer: 질의에 대한 거대언어모델 응답
+        @param model_checker: 선택한 거대언어모델 이름을 알기 위한 번호
+        @param similarity: 질의에 대한 모범 응답과 거대언어모델 응답의 유사도
+        @param embedding_model_name: 사용한 임베딩 모델 이름
+        @param chunk_size: 문서 분할기의 청크 사이즈
+        @param overlap_size: 문서 분할기의 오버랩 사이즈
         """
+
+        embedding_model_name = embedding_model_name.replace('/', '_')
+        filename = f'research_result/{embedding_model_name}_({chunk_size}_{overlap_size})_RecursiveCharacterTextSplitter.xlsx'
+        # filename = f'research_result/{embedding_model_name}_({chunk_size}_{overlap_size})_CharacterTextSplitter.xlsx'
+        print(f"filename: {filename}")
+        print("-------------------")
 
         # 실험 결과 파일 이름
         # OpenAIEmbeddings
         # filename = 'test_automation/qna_list_v2_embedding_openai_koNLPyTextSplitter(text-embedding-3-small).xlsx'
 
-        filename = 'test_automation/qna_list_v2_embedding_openai_ChractorTextSplitter(text-embedding-3-small).xlsx'
+        # filename = 'test_automation/qna_list_v2_embedding_openai_ChractorTextSplitter(text-embedding-3-small).xlsx'
         # filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-3-large).xlsx'
         # filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-ada-002).xlsx'
 
@@ -534,6 +677,7 @@ class ExperimentAutomation:
 
         # 거대언어모델별로 정렬
         data = list(sheet.values)[1:]
+        print(f"data: {data}")
         data.sort(key=lambda x: (x[0], x[1]))
 
         # 정렬된 데이터로 시트 업데이트
@@ -545,9 +689,17 @@ class ExperimentAutomation:
         # 엑셀 파일 저장
         workbook.save(filename)
 
-    def auto_question(self, llm, db, bm_db, model_num, embedding_model):
+    def auto_question(self, llm, db, bm_db, model_num, embedding_model, embedding_model_name, chunk_size, overlap_size):
         """
         질문 리스트를 기반으로 자동으로 질문하고 답변을 받아 엑셀 파일에 저장하는 함수
+        :param llm: 거대언어모델 종류
+        :param db: 기본 벡터저장소
+        :param bm_db: bm 벡터저장소
+        :param model_num: 선택한 거대언어모델 이름을 위한 번호
+        :param embedding_model: 임베딩 모델
+        :param embedding_model_name: 선택한 임베딩 모델 이름        
+        :param chunk_size: 문서 분할기의 청크 사이즈        
+        :param overlap_size: 문서 분할기의 오버랩 사이즈
         """
 
         df = pd.read_excel("test_automation/qna.xlsx")
@@ -569,7 +721,7 @@ class ExperimentAutomation:
 
             # 파일 저장
             # save_qna_list(question, response, model_num, similarity)
-            self.save_qna_list_v2(question, response, model_answer, model_num, similarity)
+            self.save_qna_list_v2(question, response, model_answer, model_num, similarity, embedding_model_name, chunk_size, overlap_size)
             # time.sleep(20)
 
     def manual_question(self, llm, db, bm_db, model_num, embedding_model):
@@ -603,10 +755,14 @@ def run():
     loader = chatbot.docs_load()
 
     # 문서 분할
-    chunk = chatbot.c_text_split(loader)
+    # chunk = chatbot.c_text_split(loader)
+    chunk, chunk_size, overlap_size = chatbot.rc_text_split(loader)
+
+    print(f"chunk: {len(chunk)}")
 
     # 문서 임베딩 및 벡터스토어 저장
-    embedding_model = chatbot.embedding_model_select_save()
+    embedding_model, embedding_model_name = chatbot.embedding_model_select_save()
+    print(f"embedding_model_name: {embedding_model_name}")
 
     db, bm_db = chatbot.document_embedding_v2(chunk, embedding_model, save_directory="./chroma_db")
 
@@ -618,7 +774,7 @@ def run():
     q_way = input("1. 질의 수동\n2. 질의 자동(실험용)\n\n사용할 방식을 선택하시오(기본값 수동): ")
 
     if q_way == '2':
-        experiment.auto_question(llm, db, bm_db, model_num, embedding_model)
+        experiment.auto_question(llm, db, bm_db, model_num, embedding_model, embedding_model_name, chunk_size, overlap_size)
     else:
         experiment.manual_question(llm, db, bm_db, model_num, embedding_model)
 
