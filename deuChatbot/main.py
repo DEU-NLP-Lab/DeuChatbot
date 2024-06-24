@@ -32,10 +32,13 @@ from langchain.retrievers.self_query.base import SelfQueryRetriever
 from typing import List, Tuple
 import time
 
+from kiwipiepy import Kiwi
+
 
 class ChatBotSystem:
     def __init__(self):
         self.system = "ChatBotSystem"
+        self.kiwi = Kiwi()
 
     def load_env(self):
         load_dotenv('.env')
@@ -278,13 +281,38 @@ class ChatBotSystem:
         # return model
         return model, model_name
 
-    def document_embedding_v2(self, docs: List[str], model, save_directory: str) -> Tuple:
+    def document_embedding_basic(self, docs: List[str], model, save_directory: str) -> Tuple:
         """
-        Embedding 모델을 사용하여 문서 임베딩하여 Chroma 벡터저장소(VectorStore)에 저장하는 함수 + 앙상블 검색기 기능 추가
+        Chroma 벡터저장소를 사용하여 문서를 임베딩하고, BM25Retriever의 기본적인 구조를 통해 문서를 키워드 위주의 임베딩을 진행하여 저장하는 함수
         :param model: 임베딩 모델 종류
         :param save_directory: 벡터저장소 저장 경로
         :param docs: 분할된 문서
-        :return:
+        :return: 벡터저장소, BM25(기본)저장소
+        """
+
+        print("\n잠시만 기다려주세요.\n\n")
+
+        # 벡터저장소가 이미 존재하는지 확인
+        if os.path.exists(save_directory):
+            shutil.rmtree(save_directory)
+            print(f"디렉토리 {save_directory}가 삭제되었습니다.\n")
+
+        print("문서 벡터화를 시작합니다. ")
+        db = Chroma.from_documents(docs, model, persist_directory=save_directory)
+        bm_db = BM25Retriever.from_documents(
+            docs
+        )
+        print("새로운 Chroma 데이터베이스가 생성되었습니다.\n")
+
+        return db, bm_db
+
+    def document_embedding_kiwi(self, docs: List[str], model, save_directory: str) -> Tuple:
+        """
+        Chroma 벡터저장소를 사용하여 문서를 임베딩하고, BM25Retriever에 한글 형태소 분석기(Kiki)를 통해 문서를 키워드 위주의 임베딩을 진행하여 저장하는 함수
+        :param model: 임베딩 모델 종류
+        :param save_directory: 벡터저장소 저장 경로
+        :param docs: 분할된 문서
+        :return: 벡터저장소, BM25(Kiwi 한글 형태소 분석기)저장소
         """
 
         print("\n잠시만 기다려주세요.\n\n")
@@ -298,6 +326,7 @@ class ChatBotSystem:
         db = Chroma.from_documents(docs, model, persist_directory=save_directory)
         bm_db = BM25Retriever.from_documents(
             docs,
+            preprocess_func=self.kiwi_tokenize
         )
         print("새로운 Chroma 데이터베이스가 생성되었습니다.\n")
 
@@ -387,6 +416,9 @@ class ChatBotSystem:
 
     def format_docs(self, docs):
         return "\n\n".join(document.page_content for document in docs)
+
+    def kiwi_tokenize(self, text):
+        return [token.form for token in self.kiwi.tokenize(text)]
 
     def reorder_documents(self, docs):
         # 재정렬
@@ -764,7 +796,9 @@ def run():
     embedding_model, embedding_model_name = chatbot.embedding_model_select_save()
     print(f"embedding_model_name: {embedding_model_name}")
 
-    db, bm_db = chatbot.document_embedding_v2(chunk, embedding_model, save_directory="./chroma_db")
+    # bm25 + 한글 형태소 분석기(kiwi, Kkma, Okt) 추가
+    db, bm_db = chatbot.document_embedding_basic(chunk, embedding_model, save_directory="./chroma_db")
+    # db, bm_db = chatbot.document_embedding_kiwi(chunk, embedding_model, save_directory="./chroma_db")
 
     # 채팅에 사용할 거대언어모델(LLM) 선택
     llm, model_num = chatbot.chat_llm()
