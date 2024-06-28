@@ -858,8 +858,8 @@ def run():
     print(f"embedding_model_name: {embedding_model_name}")
 
     # bm25 + 한글 형태소 분석기(kiwi, Kkma, Okt) 추가
-    db, bm_db = chatbot.document_embedding_basic(chunk, embedding_model, save_directory="./chroma_db")
-    # db, bm_db = chatbot.document_embedding_kiwi(chunk, embedding_model, save_directory="./chroma_db")
+    # db, bm_db = chatbot.document_embedding_basic(chunk, embedding_model, save_directory="./chroma_db")
+    db, bm_db = chatbot.document_embedding_kiwi(chunk, embedding_model, save_directory="./chroma_db")
     # db, bm_db = chatbot.document_embedding_kkma(chunk, embedding_model, save_directory="./chroma_db")
     # db, bm_db = chatbot.document_embedding_okt(chunk, embedding_model, save_directory="./chroma_db")
 
