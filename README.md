@@ -107,10 +107,8 @@
   - text-embedding-3-large
   - text-embedding-ada-002
 - HuggingFaceEmbedding
-  - beomi
-    - KcELECTRA-base
-    - KcELECTRA-small
-    - kcbert-base
+  - snunlp
+    - KR-SBERT-V40K-klueNLI-augSTS
   - jhgan
     - ko-sroberta-multitask
     - ko-sbert-multitask
@@ -118,11 +116,10 @@
     - ko-sbert-nli
     - ko-sroberta-sts
     - ko-sbert-sts
-  - Dongjin-kr
-    - ko-reranker
-  - BM-K
-    - KoSimCSE-roberta-multitask 
+  - BAAI
+    - bge-m3
   - sentence-transformers
+    - LaBSE
     - paraphrase-multilingual-MiniLM-L12-v2
     - paraphrase-multilingual-mpnet-base-v2
 - - -
@@ -211,10 +208,8 @@ LM_LOCAL_URL="http://localhost:1234/v1"
   - text-embedding-3-large
   - text-embedding-ada-002
 - HuggingFaceEmbedding
-  - beomi
-    - KcELECTRA-base
-    - KcELECTRA-small
-    - kcbert-base
+  - snunlp
+    - KR-SBERT-V40K-klueNLI-augSTS
   - jhgan
     - ko-sroberta-multitask
     - ko-sbert-multitask
@@ -222,11 +217,10 @@ LM_LOCAL_URL="http://localhost:1234/v1"
     - ko-sbert-nli
     - ko-sroberta-sts
     - ko-sbert-sts
-  - Dongjin-kr
-    - ko-reranker
-  - BM-K
-    - KoSimCSE-roberta-multitask 
+  - BAAI
+    - bge-m3
   - sentence-transformers
+    - LaBSE
     - paraphrase-multilingual-MiniLM-L12-v2
     - paraphrase-multilingual-mpnet-base-v2
 
