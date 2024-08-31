@@ -127,7 +127,7 @@ class ChatBotSystem:
             chunk_size=chunk_size,
             chunk_overlap=overlap_size,
             # encoding_name="cl100k_base",  # gpt-4
-            encoding_name="o200k_base"  # gpt-4o
+            # encoding_name="o200k_base"  # gpt-4o
         )
 
         # c_text_splitter = KonlpyTextSplitter.from_tiktoken_encoder(
@@ -241,39 +241,38 @@ class ChatBotSystem:
             )
         else:
             models = {
-                '1': "beomi/KcELECTRA-base",
-                '2': "beomi/kcbert-base",
-                '3': "jhgan/ko-sroberta-multitask",
-                '4': "jhgan/ko-sbert-multitask",
-                '5': "jhgan/ko-sroberta-nli",
-                '6': "jhgan/ko-sbert-nli",
-                '7': "jhgan/ko-sroberta-sts",
-                '8': "jhgan/ko-sbert-sts",
-                '9': "Dongjin-kr/ko-reranker",
-                '10': "BM-K/KoSimCSE-roberta-multitask",
-                '11': "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-                '12': "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+                '1': "snunlp/KR-SBERT-V40K-klueNLI-augSTS",
+                '2': "jhgan/ko-sroberta-multitask",
+                '3': "jhgan/ko-sbert-multitask",
+                '4': "jhgan/ko-sroberta-nli",
+                '5': "jhgan/ko-sbert-nli",
+                '6': "jhgan/ko-sroberta-sts",
+                '7': "jhgan/ko-sbert-sts",
+                '8': "BAAI/bge-m3",
+                '9': "sentence-transformers/LaBSE",
+                '10': "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+                '11': "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
             }
 
             embedding_model_number = input(
                 "사용할 HuggingFace Embedding Model을 선택하시오. 기본으로 jhgan/ko-sroberta-multitask 모델을 사용합니다.\n"
-                "1: beomi/KcELECTRA-base\n"
-                "2: beomi/kcbert-base\n"
-                "3: jhgan/ko-sroberta-multitask\n"
-                "4: jhgan/ko-sbert-multitask\n"
-                "5: jhgan/ko-sroberta-nli\n"
-                "6: jhgan/ko-sbert-nli\n"
-                "7: jhgan/ko-sroberta-sts\n"
-                "8: jhgan/ko-sbert-sts\n"
-                "9: Dongjin-kr/ko-reranker\n"
-                "10: BM-K/KoSimCSE-roberta-multitask\n"
-                "11: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2\n"
-                "12: sentence-transformers/paraphrase-multilingual-mpnet-base-v2\n\n"
+                "1: snunlp/KR-SBERT-V40K-klueNLI-augSTS\n"
+                "2: jhgan/ko-sroberta-multitask\n"
+                "3: jhgan/ko-sbert-multitask\n"
+                "4: jhgan/ko-sroberta-nli\n"
+                "5: jhgan/ko-sbert-nli\n"
+                "6: jhgan/ko-sroberta-sts\n"
+                "7: jhgan/ko-sbert-sts\n"
+                "8: BAAI/bge-m3\n"
+                "9: sentence-transformers/LaBSE\n"
+                "10: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2\n"
+                "11: sentence-transformers/paraphrase-multilingual-mpnet-base-v2\n\n"
                 "선택 번호: ")
 
             model_name = models.get(embedding_model_number, "jhgan/ko-sroberta-multitask")
 
-            model_kwargs = {'device': 'cpu'}  # cpu를 사용하기 위해 설정
+            # model_kwargs = {'device': 'cpu'}  # cpu를 사용하기 위해 설정
+            model_kwargs = {'device': 'cuda'}  # gpu를 사용하기 위해 설정
             encode_kwargs = {'normalize_embeddings': True}
             model = HuggingFaceEmbeddings(
                 model_name=model_name,
@@ -397,7 +396,7 @@ class ChatBotSystem:
         while True:
             model_check = input(
                 "채팅에 사용할 모델을 고르시오. 고르지 않을 경우 Google Gemini-1.5 Pro 모델을 기본으로 사용합니다.\n"
-                "1: GPT-3.5-turbo\n2: GPT-4-turbo\n3: GPT-4o\n"
+                "1: GPT-4o-mini\n2: GPT-4-turbo\n3: GPT-4o\n"
                 "4: Claude-3-sonnet\n5: Claude-3-opus\n6: Claude-3.5-sonnet-20240620\n"
                 "7: Google Gemini-Pro\n"
                 "8: EEVE Korean\n9: Qwen1.5-14B-Chat\n10: Llama-3-MAAL-8B-Instruct-v0.1\n\n "
@@ -450,7 +449,7 @@ class ChatBotSystem:
         선택된 모델에 알맞은 정보를 가공하는 함수
         """
         models = {
-            "1": {"model_name": "gpt-3.5-turbo", "model_class": ChatOpenAI},
+            "1": {"model_name": "gpt-4o-mini", "model_class": ChatOpenAI},
             "2": {"model_name": "gpt-4-turbo", "model_class": ChatOpenAI},
             "3": {"model_name": "gpt-4o", "model_class": ChatOpenAI},
             "4": {"model_name": "claude-3-sonnet-20240229", "model_class": ChatAnthropic},
@@ -549,10 +548,17 @@ class ChatBotSystem:
                     "question": RunnablePassthrough()
                 } | prompt | llm | StrOutputParser()
 
+        start_time = time.time()
+
         response = chain.invoke(query)
 
         if not isinstance(llm, ChatOpenAI):
             print("\n\n{}".format(response))
+
+        end_time = time.time()
+
+        response_time = (end_time - start_time) * 1000
+        print(f"실행 시간: {response_time}")
 
         return response
 
@@ -665,7 +671,8 @@ class ExperimentAutomation:
         norm_b = np.linalg.norm(b)
         return dot_product / (norm_a * norm_b)
 
-    def save_qna_list_v2(self, q, a, model_answer, model_checker, similarity, embedding_model_name, chunk_size, overlap_size):
+    def save_qna_list_v2(self, q, a, model_answer, model_checker, similarity, embedding_model_name, chunk_size,
+                         overlap_size):
         """
         질의 응답을 엑셀 파일에 추가하는 함수 (중복 질문 제거)
         @param q: 질의
@@ -681,8 +688,8 @@ class ExperimentAutomation:
         embedding_model_name = embedding_model_name.replace('/', '_')
         filename = f'research_result/{embedding_model_name}_({chunk_size}_{overlap_size})_RecursiveCharacterTextSplitter.xlsx'
         # filename = f'research_result/{embedding_model_name}_({chunk_size}_{overlap_size})_CharacterTextSplitter.xlsx'
-        print(f"filename: {filename}")
-        print("-------------------")
+        # print(f"filename: {filename}")
+        # print("-------------------")
 
         # 실험 결과 파일 이름
         # OpenAIEmbeddings
@@ -717,7 +724,7 @@ class ExperimentAutomation:
         # model_checker 값을 모델 이름으로 변환
         model_name = ''
         if model_checker == '1':
-            model_name = 'GPT-3.5'
+            model_name = 'GPT-4o-mini'
         elif model_checker == '2':
             model_name = 'GPT-4'
         elif model_checker == '3':
@@ -770,7 +777,7 @@ class ExperimentAutomation:
 
         # 거대언어모델별로 정렬
         data = list(sheet.values)[1:]
-        print(f"data: {data}")
+        # print(f"data: {data}")
         data.sort(key=lambda x: (x[0], x[1]))
 
         # 정렬된 데이터로 시트 업데이트
@@ -781,6 +788,9 @@ class ExperimentAutomation:
 
         # 엑셀 파일 저장
         workbook.save(filename)
+
+        if model_name == 'Google Gemini-Pro':
+            time.sleep(20)
 
     def auto_question(self, llm, db, bm_db, model_num, embedding_model, embedding_model_name, chunk_size, overlap_size):
         """
@@ -814,8 +824,8 @@ class ExperimentAutomation:
 
             # 파일 저장
             # save_qna_list(question, response, model_num, similarity)
-            self.save_qna_list_v2(question, response, model_answer, model_num, similarity, embedding_model_name, chunk_size, overlap_size)
-            # time.sleep(20)
+            self.save_qna_list_v2(question, response, model_answer, model_num, similarity, embedding_model_name,
+                                  chunk_size, overlap_size)
 
     def manual_question(self, llm, db, bm_db, model_num, embedding_model):
         check = 'Y'  # 0이면 질문 가능
@@ -855,7 +865,7 @@ def run():
 
     # 문서 임베딩 및 벡터스토어 저장
     embedding_model, embedding_model_name = chatbot.embedding_model_select_save()
-    print(f"embedding_model_name: {embedding_model_name}")
+    # print(f"embedding_model_name: {embedding_model_name}")
 
     # bm25 + 한글 형태소 분석기(kiwi, Kkma, Okt) 추가
     # db, bm_db = chatbot.document_embedding_basic(chunk, embedding_model, save_directory="./chroma_db")
@@ -871,7 +881,8 @@ def run():
     q_way = input("1. 질의 수동\n2. 질의 자동(실험용)\n\n사용할 방식을 선택하시오(기본값 수동): ")
 
     if q_way == '2':
-        experiment.auto_question(llm, db, bm_db, model_num, embedding_model, embedding_model_name, chunk_size, overlap_size)
+        experiment.auto_question(llm, db, bm_db, model_num, embedding_model, embedding_model_name, chunk_size,
+                                 overlap_size)
     else:
         experiment.manual_question(llm, db, bm_db, model_num, embedding_model)
 
