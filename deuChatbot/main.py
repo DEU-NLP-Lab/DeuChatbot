@@ -1,9 +1,10 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter, CharacterTextSplitter, KonlpyTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.embeddings import OpenAIEmbeddings
+# from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
 from langchain_upstage import UpstageEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain.chat_models import ChatOpenAI
+# from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
@@ -22,7 +23,8 @@ import numpy as np
 import pandas as pd
 
 from langchain_community.document_loaders import TextLoader
-from langchain.retrievers import BM25Retriever, EnsembleRetriever
+from langchain_community.retrievers import BM25Retriever
+from langchain.retrievers import EnsembleRetriever
 from langchain_community.document_transformers import LongContextReorder
 from langchain_core.output_parsers import StrOutputParser
 
@@ -40,8 +42,8 @@ class ChatBotSystem:
     def __init__(self):
         self.system = "ChatBotSystem"
         self.kiwi = Kiwi()
-        self.kkma = Kkma()
-        self.okt = Okt()
+        # self.kkma = Kkma()
+        # self.okt = Okt()
 
     def load_env(self):
         load_dotenv('.env')
