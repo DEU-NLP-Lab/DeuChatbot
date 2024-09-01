@@ -1,10 +1,9 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter, CharacterTextSplitter, KonlpyTextSplitter
-# from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
-from langchain_community.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_upstage import UpstageEmbeddings
 from langchain_community.vectorstores import Chroma
-# from langchain.chat_models import ChatOpenAI
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
@@ -42,8 +41,8 @@ class ChatBotSystem:
     def __init__(self):
         self.system = "ChatBotSystem"
         self.kiwi = Kiwi()
-        # self.kkma = Kkma()
-        # self.okt = Okt()
+        self.kkma = Kkma()
+        self.okt = Okt()
 
     def load_env(self):
         load_dotenv('.env')
@@ -689,39 +688,6 @@ class ExperimentAutomation:
 
         embedding_model_name = embedding_model_name.replace('/', '_')
         filename = f'research_result/{embedding_model_name}_({chunk_size}_{overlap_size})_RecursiveCharacterTextSplitter.xlsx'
-        # filename = f'research_result/{embedding_model_name}_({chunk_size}_{overlap_size})_CharacterTextSplitter.xlsx'
-        # print(f"filename: {filename}")
-        # print("-------------------")
-
-        # 실험 결과 파일 이름
-        # OpenAIEmbeddings
-        # filename = 'test_automation/qna_list_v2_embedding_openai_koNLPyTextSplitter(text-embedding-3-small).xlsx'
-
-        # filename = 'test_automation/qna_list_v2_embedding_openai_ChractorTextSplitter(text-embedding-3-small).xlsx'
-        # filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-3-large).xlsx'
-        # filename = 'test_automation/qna_list_v2_embedding_openai(text-embedding-ada-002).xlsx'
-
-        # filename = 'test_automation/qna_list_v2_embedding_upstage(solar-embedding-1-large).xlsx'
-
-        # HuggingFaceEmbeddings
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface(beomi_KcELECTRA_base).xlsx'
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface(beomi_kcbert_base).xlsx'
-
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface_koNLPyTextSplitter(jhgan_ko_sroberta_multitask).xlsx'
-
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sroberta_multitask).xlsx'
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sbert_multitask).xlsx'
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sroberta_nli).xlsx'
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sbert_nli).xlsx'
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sroberta_sts).xlsx'
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface(jhgan_ko_sbert_sts).xlsx'
-
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface(Dongjin-kr_ko_reranker).xlsx'
-
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface(BM-K_KoSimCSE_roberta_multitask).xlsx'
-
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface(sentence-transformers_paraphrase_multilingual_MiniLM_L12_v2).xlsx'
-        # filename = 'test_automation/qna_list_v2_embedding_huggingface(sentence-transformers_paraphrase_multilingual_mpnet_base_v2).xlsx'
 
         # model_checker 값을 모델 이름으로 변환
         model_name = ''
