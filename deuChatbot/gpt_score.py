@@ -1,4 +1,5 @@
 from langchain_openai import ChatOpenAI
+from langchain_huggingface import HuggingFacePipeline
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
@@ -28,6 +29,8 @@ class ChatBotSystem:
 
         os.getenv("LM_URL")
         os.getenv("LM_LOCAL_URL")
+
+        os.getenv("HUGGINGFACEHUB_API_TOKEN")
 
     def chat_llm(self):
         """
@@ -106,70 +109,278 @@ class ChatBotSystem:
         :return:
         """
 
-        template = """
-            Evaluate Factuality in the Generated Response
-    
-            You will be given a source text and a generated response. Your task is to evaluate the factuality of the generated response by comparing it to the source text.
-            
-            **Evaluation Criteria**:
-            - Factuality (1-5): Does the generated response accurately reflect the factual statements found in the source text? A score of 1 means that the response contains multiple inaccuracies or fabricated information, while a score of 5 means that the response is entirely accurate and preserves all factual details from the source text.
-            
-            **Evaluation Steps**:
-            1. Carefully read the source text to identify key factual statements and details.
-            2. Review the generated response and compare it to the source text, focusing on the accuracy and integrity of the facts presented.
-            3. Assign a score for factuality on a scale of 1 to 5 based on the Evaluation Criteria.
-            
-            **Example**:
-            Source Text:
-            {source_text}
-            
-            Generated Response:
-            {generated_response}
-                                    
-            Evaluation Form (scores ONLY):
-            - Factuality Score (1-5):
-        """
+        # from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+        # import torch
+        #
+        # tokenizer = AutoTokenizer.from_pretrained("google/gemma-2-9b-it")
+        # model = AutoModelForCausalLM.from_pretrained(
+        #     "google/gemma-2-9b-it",
+        #     device_map="auto",
+        #     torch_dtype=torch.bfloat16,
+        # )
+        #
+        # pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, max_new_tokens=512)
+        #
+        # llm = HuggingFacePipeline(pipeline=pipe)
 
-        # template = """
-        # Evaluate Factuality in the Generated Response
-        #
-        # You will be given a source text and a generated response. Your task is to evaluate the factuality of the generated response by comparing it to the source text.
-        #
-        # **Evaluation Criteria**:
-        # - Factuality (1-5): Does the generated response accurately reflect the factual statements found in the source text? A score of 1 means that the response contains multiple inaccuracies or fabricated information, while a score of 5 means that the response is entirely accurate and preserves all factual details from the source text.
-        #
-        # **Evaluation Steps**:
-        # 1. Carefully read the source text to identify key factual statements and details.
-        # 2. Review the generated response and compare it to the source text, focusing on the accuracy and integrity of the facts presented.
-        # 3. Provide a detailed explanation of your evaluation, noting any discrepancies or accurate representations.
-        # 4. Assign a score for factuality on a scale of 1 to 5 based on the Evaluation Criteria.
-        #
-        # **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
-        #
-        # **Example**:
-        # Source Text:
-        # {source_text}
-        #
-        # Generated Response:
-        # {generated_response}
-        #
-        # Evaluation Explanation:
-        # - Provide an analysis of the factual accuracy, highlighting specific aspects where the generated response aligns or diverges from the source text.
-        #
-        # Factuality Score (1-5):
-        # """
+        # 파일 경로 설정
+        file_path = os.path.join("prompt", "prompt.txt")
+
+        # UTF-8 인코딩 방식으로 파일 읽어오기
+        with open(file_path, "r", encoding="utf-8") as f:
+            template = f.read()
 
         prompt = PromptTemplate.from_template(template)
 
+        gpt_score_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """
+                    # GPTScore Prompt Template
 
-        chain = prompt | llm | StrOutputParser()
+                    ## Factuality
+                    Evaluate Factuality in the Generated Response
+                    
+                    You will be given a source text and a generated response. Your task is to evaluate the factuality of the generated response by comparing it to the source text.
+                    
+                    **Evaluation Criteria**:
+                    - Factuality (1-5): Does the generated response accurately reflect the factual statements found in the source text? A score of 1 means that the response contains multiple inaccuracies or fabricated information, while a score of 5 means that the response is entirely accurate and preserves all factual details from the source text.
+                    
+                    **Evaluation Steps**:
+                    1. Carefully read the source text to identify key factual statements and details.
+                    2. Review the generated response and compare it to the source text, focusing on the accuracy and integrity of the facts presented.
+                    3. Assign a score for factuality on a scale of 1 to 5 based on the Evaluation Criteria.
+                    
+                    **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
+                    
+                    ## Consistency
+                    Evaluate Consistency in the Generated Response
+                    
+                    You will be given a source text and a generated response. Your task is to evaluate the consistency of the generated response by comparing it to the source text.
+                    
+                    **Evaluation Criteria**:
+                    - Consistency (1-5): Does the generated response consistently provide information that aligns with the source text? A score of 1 means that the response contains contradictory or conflicting information, while a score of 5 means that the response is fully consistent with no discrepancies.
+                    
+                    **Evaluation Steps**:
+                    1. Carefully read the source text to understand the key points and details.
+                    2. Review the generated response and compare it to the source text, focusing on the consistency of the information provided.
+                    3. Provide a detailed explanation of your evaluation, noting any inconsistencies or confirming the consistency of the response.
+                    4. Assign a score for consistency on a scale of 1 to 5 based on the Evaluation Criteria.
+                    
+                    **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
+                    
+                    Evaluation Explanation:
+                    - Provide an analysis of the consistency, highlighting specific aspects where the generated response aligns or diverges from the source text.
+                    
+                    ## Relevance
+                    Evaluate Relevance in the Generated Response
+                    
+                    You will be given a source text and a generated response. Your task is to evaluate the relevance of the generated response by comparing it to the source text.
+                    
+                    **Evaluation Criteria**:
+                    - Relevance (1-5): How well does the generated response relate to the source text? A score of 1 means that the response is largely irrelevant or off-topic, while a score of 5 means that the response is highly relevant and directly addresses the key points of the source text.
+                    
+                    **Evaluation Steps**:
+                    1. Carefully read the source text to understand its main topics and key points.
+                    2. Review the generated response and compare it to the source text, focusing on how well it addresses the main topics and key points.
+                    3. Provide a detailed explanation of your evaluation, highlighting specific areas where the generated response is relevant or irrelevant to the source text.
+                    4. Assign a score for relevance on a scale of 1 to 5 based on the Evaluation Criteria.
+                    
+                    **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
+                    
+                    Evaluation Explanation:
+                    - Provide an analysis of the relevance, highlighting specific aspects where the generated response aligns or diverges from the main topics of the source text.
+                    
+                    ## Fluency
+                    Evaluate Fluency in the Generated Response
+                    
+                    You will be given a source text and a generated response. Your task is to evaluate the fluency of the generated response by assessing its grammatical correctness and readability.
+                    
+                    **Evaluation Criteria**:
+                    - Fluency (1-5): How well is the generated response written in terms of grammar, syntax, and overall readability? A score of 1 means the response is poorly written, with numerous grammatical errors or awkward phrasing, while a score of 5 means the response is highly fluent, with excellent grammar and smooth readability.
+                    
+                    **Evaluation Steps**:
+                    1. Carefully read the source text to understand its style and tone.
+                    2. Review the generated response, focusing on its grammatical correctness, sentence structure, and overall readability.
+                    3. Provide a detailed explanation of your evaluation, noting any grammatical errors, awkward phrasing, or confirming the fluency of the response.
+                    4. Assign a score for fluency on a scale of 1 to 5 based on the Evaluation Criteria.
+                    
+                    **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
+                    
+                    Evaluation Explanation:
+                    - Provide an analysis of the fluency, highlighting specific aspects where the generated response is grammatically correct, easy to read, or where it may have issues with fluency.
+                    
+                    ## Coherence
+                    Evaluate Coherence in the Generated Response
+                    
+                    You will be given a source text and a generated response. Your task is to evaluate the coherence of the generated response by comparing it to the source text.
+                    
+                    **Evaluation Criteria**:
+                    - Coherence (1-5): How well does the generated response make sense as a unified piece of text? A score of 1 means that the response is disjointed or lacks logical flow, while a score of 5 means that the response is well-structured and logically consistent throughout.
+                    
+                    **Evaluation Steps**:
+                    1. Carefully read the source text to understand its overall structure and key points.
+                    2. Review the generated response and assess its logical flow, structure, and overall coherence.
+                    3. Provide a detailed explanation of your evaluation, noting any logical inconsistencies or confirming the coherence of the response.
+                    4. Assign a score for coherence on a scale of 1 to 5 based on the Evaluation Criteria.
+                    
+                    **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
+                    
+                    Evaluation Explanation:
+                    - Provide an analysis of the coherence, highlighting specific aspects where the generated response aligns or diverges in its logical flow and structure compared to the source text.
+                    
+                    ## Accuracy
+                    Evaluate Accuracy in the Generated Response
+                    
+                    You will be given a source text and a generated response. Your task is to evaluate the accuracy of the generated response by comparing it to the source text.
+                    
+                    **Evaluation Criteria**:
+                    - Accuracy (1-5): Are there any inaccuracies, omissions, or unfactual content in the generated response? A score of 1 means that the response contains significant inaccuracies or incorrect information, while a score of 5 means that the response is fully accurate and correctly reflects the source text.
+                    
+                    **Evaluation Steps**:
+                    1. Carefully read the source text to identify all the key facts and details.
+                    2. Review the generated response and compare it to the source text, focusing on the accuracy of the information provided.
+                    3. Provide a detailed explanation of your evaluation, highlighting any inaccuracies, omissions, or confirming the accuracy of the response.
+                    4. Assign a score for accuracy on a scale of 1 to 5 based on the Evaluation Criteria.
+                    
+                    **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
+                    
+                    Evaluation Explanation:
+                    - Provide an analysis of the accuracy, highlighting specific aspects where the generated response aligns with or diverges from the facts in the source text.
+                    
+                    ## Multidimensional Quality
+                    Evaluate Multidimensional Quality in the Generated Response
+                    
+                    You will be given a source text and a generated response. Your task is to evaluate the overall quality of the generated response across multiple dimensions, including factuality, coherence, relevance, and accuracy.
+                    
+                    **Evaluation Criteria**:
+                    - Multidimensional Quality (1-5): How well does the generated response perform across all relevant quality dimensions (factuality, coherence, relevance, accuracy)? A score of 1 means the response performs poorly in most or all dimensions, while a score of 5 means the response performs excellently across all dimensions.
+                    
+                    **Evaluation Steps**:
+                    1. Carefully read the source text to understand the main content and quality dimensions.
+                    2. Review the generated response, assessing its performance in terms of factuality, coherence, relevance, and accuracy.
+                    3. Provide a detailed explanation of your evaluation, highlighting the strengths and weaknesses of the response across all quality dimensions.
+                    4. Assign a score for overall multidimensional quality on a scale of 1 to 5 based on the Evaluation Criteria.
+                    
+                    **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
+                    
+                    Evaluation Explanation:
+                    - Provide an analysis of the overall quality, considering the factuality, coherence, relevance, and accuracy of the generated response.
+                    
+                    ## Semantic Appropriateness
+                    Evaluate Semantic Appropriateness in the Generated Response
+                    
+                    You will be given a source text and a generated response. Your task is to evaluate the semantic appropriateness of the generated response by comparing it to the source text.
+                    
+                    **Evaluation Criteria**:
+                    - Semantic Appropriateness (1-5): How well does the generated response convey meaning that is appropriate and aligned with the context of the source text? A score of 1 means the response is semantically inappropriate or off-context, while a score of 5 means the response is fully appropriate and semantically consistent with the source text.
+                    
+                    **Evaluation Steps**:
+                    1. Carefully read the source text to understand its meaning and context.
+                    2. Review the generated response and assess whether the meaning it conveys is appropriate and aligned with the source text.
+                    3. Provide a detailed explanation of your evaluation, highlighting areas where the generated response is semantically appropriate or where it diverges from the intended meaning.
+                    4. Assign a score for semantic appropriateness on a scale of 1 to 5 based on the Evaluation Criteria.
+                    
+                    **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
+                    
+                    Evaluation Explanation:
+                    - Provide an analysis of the semantic appropriateness, highlighting specific aspects where the generated response aligns or diverges from the meaning and context of the source text.
+                    
+                    ## Understandability
+                    Evaluate Understandability in the Generated Response
+                    
+                    You will be given a source text and a generated response. Your task is to evaluate the understandability of the generated response by considering how clear and easy it is to comprehend.
+                    
+                    **Evaluation Criteria**:
+                    - Understandability (1-5): How easy is it to understand the generated response? A score of 1 means that the response is confusing, unclear, or difficult to comprehend, while a score of 5 means that the response is very clear, straightforward, and easy to understand.
+                    
+                    **Evaluation Steps**:
+                    1. Carefully read the source text to understand its main points and context.
+                    2. Review the generated response, focusing on how clearly the information is presented and whether it is easy to follow.
+                    3. Provide a detailed explanation of your evaluation, noting any areas where the response is particularly clear or where it may be confusing.
+                    4. Assign a score for understandability on a scale of 1 to 5 based on the Evaluation Criteria.
+                    
+                    **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
+                    
+                    Evaluation Explanation:
+                    - Provide an analysis of the understandability, highlighting specific aspects where the generated response is clear or where it may be difficult to comprehend.
+                    
+                    ## Output Score
+                    **Example**:
+                    Source Text:
+                    {source_text}
+                    
+                    Generated Response:
+                    {generated_response}
+                    
+                    1. Factuality Score (1-5):
+                    2. Consistency Score (1-5):
+                    3. Relevance Score (1-5):
+                    4. Fluency Score (1-5):
+                    5. Coherence Score (1-5):
+                    6. Accuracy Score (1-5):
+                    7. Multidimensional Quality Score (1-5):
+                    8. Semantic Appropriateness Score (1-5):
+                    9. Understandability Score (1-5):
+                    
+                    {{
+                        "Factuality Score": 4,
+                        "Consistency Score": 3,
+                        "Relevance Score": 5,
+                        "Fluency Score": 4,
+                        "Coherence Score": 4,
+                        "Accuracy Score": 4,
+                        "Multidimensional Quality Score": 4,
+                        "Semantic Appropriateness Score": 4,
+                        "Understandability Score": 4
+                    }}                    
 
-        response = chain.invoke({"source_text": correct_answer, "generated_response": answer})
+                    """,
+                ),
+                ("human", "generated_response: {generated_response}"),
+            ]
+        )
+
+        gpt_score_chain = {
+                    "source_text": lambda x: correct_answer,
+                    "generated_response": RunnablePassthrough()
+                } | gpt_score_prompt | llm | StrOutputParser()
+
+        gpt_score_response = gpt_score_chain.invoke({"source_text": correct_answer, "generated_response": answer})
 
         if not isinstance(llm, ChatOpenAI):
-            print("\n\n{}".format(response))
+            print("\n\n{}".format(gpt_score_response))
 
-        return response
+        return gpt_score_response
+
+    def file_read(self):
+        """
+        엑셀 파일을 읽어서 데이터프레임으로 반환하는 함수
+        :return: 파일 내용
+        """
+
+        file_path = "research_result/"
+
+        # 전체 파일 경로 리스트를 선언
+        full_file_paths = []
+
+        # 경로가 디렉토리인지 확인
+        if os.path.isdir(file_path):
+            # 해당 디렉토리의 파일 목록을 가져옴
+            file_list = os.listdir(file_path)
+
+            # 파일 경로를 결합하여 리스트로 추가
+            full_file_paths = [os.path.join(file_path, file) for file in file_list]
+
+        # if 블록 바깥에서도 full_file_paths 사용 가능
+        print(full_file_paths)
+
+
+
+
+
+        return full_file_paths
 
 
 # def auto_question():
@@ -202,8 +413,7 @@ class ChatBotSystem:
 
 def run():
     """
-    챗봇 시작
-    Document Load -> Text Splitter -> Ducument Embedding -> VectorStore save -> QA
+    질의응답 시스템 생성 -> 환경변수 로드 -> 거대언어모델 선택 -> 검사할 파일 읽기 -> 파일 내용 읽기 -> 정답과 모델 답안 비교 -> 결과 출력
     """
 
     chatbot = ChatBotSystem()
@@ -213,6 +423,14 @@ def run():
 
     # 채팅에 사용할 거대언어모델(LLM) 선택
     llm, model_num = chatbot.chat_llm()
+
+    # 파일 읽기
+    file_list = chatbot.file_read()
+
+    for file in file_list:
+        print(file)
+        
+        # 파일 내부 내용 읽기
 
     correct_answer = """
     디자인조형학과의 실기시험에 대한 정보는 다음과 같습니다:
@@ -299,8 +517,9 @@ def run():
     #         디자인조형학과의 실기시험은 시각디자인, 산업디자인, 공예디자인 세 가지 종목으로 구성되어 있습니다. 각 종목은 기초디자인, 사고의 전환 두 가지 주제로 이루어져 있습니다. 시험 시간은 5시간이며, 화지크기는 켄트지3절입니다. 준비물로는 볼펜, 연필, 색연필, 수채물감 등 표현에 필요한 도구가 필요합니다. 시험에서는 주제A와 주제B에서 각 1개씩 선정하여 연결된 주제를 당일 추첨하며, 주어진 사물과 이미지를 활용하여 표현해야 합니다.
     #         """
 
-
     response = chatbot.qna(llm, correct_answer, answer)
+
+
     # print(response)
 
 
