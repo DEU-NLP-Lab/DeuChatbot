@@ -36,6 +36,9 @@ import time
 from kiwipiepy import Kiwi
 from konlpy.tag import Kkma, Okt
 
+from implements.excelToJson import ExcelToJson
+from implements.jsonNormalizer import JsonNormalizer
+
 
 class ChatBotSystem:
     def __init__(self):
@@ -400,13 +403,14 @@ class ChatBotSystem:
                 "1: GPT-4o-mini\n2: GPT-4-turbo\n3: GPT-4o\n"
                 "4: Claude-3-sonnet\n5: Claude-3-opus\n6: Claude-3.5-sonnet-20240620\n"
                 "7: Google Gemini-Pro\n"
-                "8: EEVE Korean\n9: Qwen1.5-14B-Chat\n10: Llama-3-MAAL-8B-Instruct-v0.1\n\n "
+                "8: Google Gemma-2-9b-it\n9: Meta Llama-3.1-Instruct\n10: Mistral-Instruct-v0.3\n11: Qwen2-7B-instruct\n"
+                "12: EEVE Korean\n13: Llama-3-MAAL-8B-Instruct-v0.1\n\n"
                 "선택 번호 : ")
 
-            if model_check in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']:
+            if model_check in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13']:
                 break
             else:
-                print("잘못된 입력입니다. 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 중 하나를 선택해주세요.\n")
+                print("잘못된 입력입니다. 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 중 하나를 선택해주세요.\n")
 
         model_info = self.get_model_info(model_check)
         model_class = model_info["model_class"]
@@ -456,14 +460,18 @@ class ChatBotSystem:
             "4": {"model_name": "claude-3-sonnet-20240229", "model_class": ChatAnthropic},
             "5": {"model_name": "claude-3-opus-20240229", "model_class": ChatAnthropic},
             "6": {"model_name": "claude-3-5-sonnet-20240620", "model_class": ChatAnthropic},
-            "7": {"model_name": "gemini-1.5-pro-latest", "model_class": ChatGoogleGenerativeAI},
-            "8": {"model_name": "teddylee777/EEVE-Korean-Instruct-10.8B-v1.0-gguf", "model_class": ChatOpenAI,
+            "7": {"model_name": "gemini-1.5-pro-exp-0827", "model_class": ChatGoogleGenerativeAI},
+            "8": {"model_name": "bartowski/gemma-2-9b-it-GGUF", "model_class": ChatOpenAI,
                   "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
-            # "base_url": os.getenv("LM_LOCAL_URL"), "api_key": "lm-studio"},
-            "9": {"model_name": "Qwen/Qwen1.5-14B-Chat-GGUF", "model_class": ChatOpenAI,
-                  "base_url": os.getenv("LM_URL"),
-                  "api_key": "lm-studio"},
-            "10": {"model_name": "asiansoul/Llama-3-MAAL-8B-Instruct-v0.1-GGUF", "model_class": ChatOpenAI,
+            "9": {"model_name": "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF", "model_class": ChatOpenAI,
+                  "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
+            "10": {"model_name": "lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF", "model_class": ChatOpenAI,
+                  "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
+            "11": {"model_name": "Qwen/Qwen2-7B-Instruct-GGUF", "model_class": ChatOpenAI,
+                   "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
+            "12": {"model_name": "teddylee777/EEVE-Korean-Instruct-10.8B-v1.0-gguf", "model_class": ChatOpenAI,
+                  "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
+            "13": {"model_name": "asiansoul/Llama-3-MAAL-8B-Instruct-v0.1-GGUF", "model_class": ChatOpenAI,
                    "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
         }
 
@@ -838,7 +846,7 @@ class ChatBotSystem:
                         "Multidimensional Quality Score": 4,
                         "Semantic Appropriateness Score": 4,
                         "Understandability Score": 4
-                    }}                    
+                    }}
 
                     """,
                 ),
@@ -951,14 +959,19 @@ class ExperimentAutomation:
         elif model_checker == '6':
             model_name = 'Claude-3-5-sonnet-20240620'
         elif model_checker == '7':
-            model_name = 'Google Gemini-Pro'
+            model_name = 'Google Gemini-Pro-exp-0827'
         elif model_checker == '8':
-            model_name = 'EEVE Korean'
+            model_name = 'Google Gemma-2-9b-it'
         elif model_checker == '9':
-            model_name = 'Qwen1.5-14B-Chat'
+            model_name = 'Meta Llama-3.1-Instruct'
         elif model_checker == '10':
+            model_name = 'Mistral-7B-Instruct-v0.3'
+        elif model_checker == '11':
+            model_name = 'Qwen2-7B-instruct'
+        elif model_checker == '12':
+            model_name = 'EEVE-Korean-Instruct-10.8B-v1.0'
+        elif model_checker == '13':
             model_name = 'Llama-3-MAAL-8B-Instruct-v0.1'
-
         try:
             # 기존 엑셀 파일 열기
             workbook = load_workbook(filename)
@@ -1063,6 +1076,77 @@ class ExperimentAutomation:
 
             check = input("\n\nY: 계속 질문한다.\nN: 프로그램 종료\n입력: ")
 
+    def score_calculate(self):
+        # research_result 폴더 경로
+        folder_path = "research_result"
+        output_path = "research_result/output"
+
+        # output 폴더가 존재하지 않으면 생성
+        os.makedirs(output_path, exist_ok=True)
+
+        # research_result 폴더 내 모든 파일 처리
+        for file_name in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, file_name)
+
+            print(f"file_path: {file_path}")
+
+            # 엑셀 파일만 처리 (파일 확장자가 .xlsx인 경우)
+            if file_name.endswith('.xlsx'):
+                try:
+                    # ExcelToJson 처리
+                    excel_to_json = ExcelToJson(
+                        file_path,  # 각 파일 경로
+                        "Sheet",  # 엑셀 파일의 시트명
+                        0,  # model_name 열 순번
+                        1  # GPTScore 열 순번
+                    )
+
+                    excel_to_json.load_excel()  # 엑셀 로드
+                    excel_to_json.extract_json()  # Json 추출
+                    excel_to_json.append_num_key()  # Key 추가
+
+                    # 파일 이름에서 확장자 제거하여 저장 이름 설정
+                    save_name = os.path.splitext(file_name)[0]
+                    save_file_path = os.path.join(output_path, f"{save_name}.json")
+
+                    # 파일이 이미 존재하는지 확인하고 덮어쓰기 처리
+                    if os.path.exists(save_file_path):
+                        print(f"파일이 이미 존재합니다. 덮어쓰기 합니다: {save_file_path}")
+
+                    excel_to_json.save_json(
+                        save_path=output_path,
+                        save_name=save_name  # 파일 이름 기반으로 저장
+                    )
+
+                    print(f"Excel -> Json 변환 성공: {file_name}")
+
+                    # JsonNormalizer 처리
+                    normalized_save_path = os.path.join(output_path, f"normalized_{save_name}.json")
+
+                    json_normalizer = JsonNormalizer(
+                        file_path=save_file_path
+                    )
+
+                    json_normalizer.load_json()
+                    json_normalizer.normalize_json()
+
+                    # 파일이 이미 존재하는지 확인하고 덮어쓰기 처리
+                    if os.path.exists(normalized_save_path):
+                        print(f"파일이 이미 존재합니다. 덮어쓰기 합니다: {normalized_save_path}")
+
+                    json_normalizer.save_json(
+                        save_path=output_path,
+                        save_name=f"normalized_{save_name}"  # 파일 이름 기반으로 저장
+                    )
+                    print(f"JSON Normalize 성공: {file_name}")
+
+                except FileNotFoundError as e:
+                    print(f"파일을 찾을 수 없습니다: {file_name} - {e}")
+                except ValueError as e:
+                    print(f"값 오류 발생: {file_name} - {e}")
+                except Exception as e:
+                    print(f"오류 발생...{file_name}: {e}")
+
 
 def run():
     """
@@ -1071,6 +1155,7 @@ def run():
     """
 
     chatbot = ChatBotSystem()
+    experiment = ExperimentAutomation()
 
     # 환경변수 로드
     chatbot.load_env()
@@ -1098,7 +1183,6 @@ def run():
     llm, model_num = chatbot.chat_llm()
 
     # 정보 검색
-    experiment = ExperimentAutomation()
     q_way = input("1. 질의 수동\n2. 질의 자동(실험용)\n\n사용할 방식을 선택하시오(기본값 수동): ")
 
     if q_way == '2':
@@ -1109,4 +1193,7 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    # run()
+
+    experiment = ExperimentAutomation()
+    experiment.score_calculate()
