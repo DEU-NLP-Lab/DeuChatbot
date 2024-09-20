@@ -36,8 +36,7 @@ import time
 from kiwipiepy import Kiwi
 from konlpy.tag import Kkma, Okt
 
-from implements.excelToJson import ExcelToJson
-from implements.jsonNormalizer import JsonNormalizer
+from implements.preprocessing import GPTScorePreprocessing
 
 
 class ChatBotSystem:
@@ -1086,59 +1085,45 @@ class ExperimentAutomation:
 
         # research_result 폴더 내 모든 파일 처리
         for file_name in os.listdir(folder_path):
+            
+            if file_name.startswith('~$'): # 엑셀 임시 파일 오류 방지
+                continue  
+            
             file_path = os.path.join(folder_path, file_name)
 
             print(f"file_path: {file_path}")
 
             # 엑셀 파일만 처리 (파일 확장자가 .xlsx인 경우)
             if file_name.endswith('.xlsx'):
+                print("steste")
                 try:
-                    # ExcelToJson 처리
-                    excel_to_json = ExcelToJson(
+                    # Json 전처리
+                    score_preprocessing = GPTScorePreprocessing(
                         file_path,  # 각 파일 경로
                         "Sheet",  # 엑셀 파일의 시트명
                         0,  # model_name 열 순번
                         1  # GPTScore 열 순번
                     )
 
-                    excel_to_json.load_excel()  # 엑셀 로드
-                    excel_to_json.extract_json()  # Json 추출
-                    excel_to_json.append_num_key()  # Key 추가
+                    score_preprocessing.load_excel()  # 엑셀 로드
+                    score_preprocessing.extract_json()  # Json 추출
+                    score_preprocessing.normalize_json() # 정규화
 
                     # 파일 이름에서 확장자 제거하여 저장 이름 설정
                     save_name = os.path.splitext(file_name)[0]
                     save_file_path = os.path.join(output_path, f"{save_name}.json")
 
                     # 파일이 이미 존재하는지 확인하고 덮어쓰기 처리
-                    if os.path.exists(save_file_path):
-                        print(f"파일이 이미 존재합니다. 덮어쓰기 합니다: {save_file_path}")
+                    # if os.path.exists(save_file_path):
+                    #     print(f"파일이 이미 존재합니다. 덮어쓰기 합니다: {save_file_path}")
 
-                    excel_to_json.save_json(
+                    score_preprocessing.save_json(
                         save_path=output_path,
                         save_name=save_name  # 파일 이름 기반으로 저장
                     )
+      
 
-                    print(f"Excel -> Json 변환 성공: {file_name}")
-
-                    # JsonNormalizer 처리
-                    normalized_save_path = os.path.join(output_path, f"normalized_{save_name}.json")
-
-                    json_normalizer = JsonNormalizer(
-                        file_path=save_file_path
-                    )
-
-                    json_normalizer.load_json()
-                    json_normalizer.normalize_json()
-
-                    # 파일이 이미 존재하는지 확인하고 덮어쓰기 처리
-                    if os.path.exists(normalized_save_path):
-                        print(f"파일이 이미 존재합니다. 덮어쓰기 합니다: {normalized_save_path}")
-
-                    json_normalizer.save_json(
-                        save_path=output_path,
-                        save_name=f"normalized_{save_name}"  # 파일 이름 기반으로 저장
-                    )
-                    print(f"JSON Normalize 성공: {file_name}")
+                    print(f"Json 전처리 성공: {file_name}")
 
                 except FileNotFoundError as e:
                     print(f"파일을 찾을 수 없습니다: {file_name} - {e}")
@@ -1146,6 +1131,8 @@ class ExperimentAutomation:
                     print(f"값 오류 발생: {file_name} - {e}")
                 except Exception as e:
                     print(f"오류 발생...{file_name}: {e}")
+                    
+
 
 
 def run():
