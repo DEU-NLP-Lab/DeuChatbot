@@ -1105,13 +1105,14 @@ class ExperimentAutomation:
                         1  # GPTScore 열 순번
                     )
 
-                    score_preprocessing.load_excel()  # 엑셀 로드
-                    score_preprocessing.extract_json()  # Json 추출
-                    score_preprocessing.normalize_json() # 정규화
+                    # score_preprocessing.load_excel()  # 엑셀 로드
+                    # score_preprocessing.extract_json()  # Json 추출
+                    # score_preprocessing.normalize_json() # 정규화
+                    score_preprocessing.run()  # 엑셀 로드 -> Json 추출 -> 정규화
 
                     # 파일 이름에서 확장자 제거하여 저장 이름 설정
                     save_name = os.path.splitext(file_name)[0]
-                    save_file_path = os.path.join(output_path, f"{save_name}.json")
+                    # save_file_path = os.path.join(output_path, f"{save_name}.json")
 
                     # 파일이 이미 존재하는지 확인하고 덮어쓰기 처리
                     # if os.path.exists(save_file_path):
@@ -1131,8 +1132,6 @@ class ExperimentAutomation:
                     print(f"값 오류 발생: {file_name} - {e}")
                 except Exception as e:
                     print(f"오류 발생...{file_name}: {e}")
-                    
-
 
 
 def run():

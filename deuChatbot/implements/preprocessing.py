@@ -89,3 +89,8 @@ class GPTScorePreprocessing:
         """결과를 JSON 파일로 저장"""
         with open(f"{save_path}/{save_name}.json", "w", encoding="UTF-8") as f:
             json.dump(self.output_json, f, indent=4)
+
+    def run(self):
+        self.load_excel()  # 엑셀 로드
+        self.extract_json()  # Json 추출
+        self.normalize_json()  # 정규화

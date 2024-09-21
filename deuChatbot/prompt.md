@@ -1,6 +1,6 @@
 # GPTScore Prompt Template
 
-## Factuality 
+## Factuality
 Evaluate Factuality in the Generated Response
 
 You will be given a source text and a generated response. Your task is to evaluate the factuality of the generated response by comparing it to the source text.
@@ -15,16 +15,7 @@ You will be given a source text and a generated response. Your task is to evalua
 
 **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
 
-**Example**:
-Source Text:
-{source_text}
-
-Generated Response:
-{generated_response}
-                        
-Factuality Score (1-5):
-
-## Consistency 
+## Consistency
 Evaluate Consistency in the Generated Response
 
 You will be given a source text and a generated response. Your task is to evaluate the consistency of the generated response by comparing it to the source text.
@@ -40,19 +31,10 @@ You will be given a source text and a generated response. Your task is to evalua
 
 **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
 
-**Example**:
-Source Text:
-{source_text}
-
-Generated Response:
-{generated_response}
-
 Evaluation Explanation:
 - Provide an analysis of the consistency, highlighting specific aspects where the generated response aligns or diverges from the source text.
 
-Consistency Score (1-5):
-
-## Relevance 
+## Relevance
 Evaluate Relevance in the Generated Response
 
 You will be given a source text and a generated response. Your task is to evaluate the relevance of the generated response by comparing it to the source text.
@@ -68,19 +50,10 @@ You will be given a source text and a generated response. Your task is to evalua
 
 **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
 
-**Example**:
-Source Text:
-{source_text}
-
-Generated Response:
-{generated_response}
-
 Evaluation Explanation:
 - Provide an analysis of the relevance, highlighting specific aspects where the generated response aligns or diverges from the main topics of the source text.
 
-Relevance Score (1-5):
-
-## Fluency 
+## Fluency
 Evaluate Fluency in the Generated Response
 
 You will be given a source text and a generated response. Your task is to evaluate the fluency of the generated response by assessing its grammatical correctness and readability.
@@ -96,17 +69,8 @@ You will be given a source text and a generated response. Your task is to evalua
 
 **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
 
-**Example**:
-Source Text:
-{source_text}
-
-Generated Response:
-{generated_response}
-
 Evaluation Explanation:
 - Provide an analysis of the fluency, highlighting specific aspects where the generated response is grammatically correct, easy to read, or where it may have issues with fluency.
-
-Fluency Score (1-5):
 
 ## Coherence
 Evaluate Coherence in the Generated Response
@@ -124,19 +88,10 @@ You will be given a source text and a generated response. Your task is to evalua
 
 **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
 
-**Example**:
-Source Text:
-{source_text}
-
-Generated Response:
-{generated_response}
-
 Evaluation Explanation:
 - Provide an analysis of the coherence, highlighting specific aspects where the generated response aligns or diverges in its logical flow and structure compared to the source text.
 
-Coherence Score (1-5):
-
-## Accuracy 
+## Accuracy
 Evaluate Accuracy in the Generated Response
 
 You will be given a source text and a generated response. Your task is to evaluate the accuracy of the generated response by comparing it to the source text.
@@ -152,19 +107,10 @@ You will be given a source text and a generated response. Your task is to evalua
 
 **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
 
-**Example**:
-Source Text:
-{source_text}
-
-Generated Response:
-{generated_response}
-
 Evaluation Explanation:
 - Provide an analysis of the accuracy, highlighting specific aspects where the generated response aligns with or diverges from the facts in the source text.
 
-Accuracy Score (1-5):
-
-## Multidimensional Quality 
+## Multidimensional Quality
 Evaluate Multidimensional Quality in the Generated Response
 
 You will be given a source text and a generated response. Your task is to evaluate the overall quality of the generated response across multiple dimensions, including factuality, coherence, relevance, and accuracy.
@@ -180,19 +126,10 @@ You will be given a source text and a generated response. Your task is to evalua
 
 **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
 
-**Example**:
-Source Text:
-{source_text}
-
-Generated Response:
-{generated_response}
-
 Evaluation Explanation:
 - Provide an analysis of the overall quality, considering the factuality, coherence, relevance, and accuracy of the generated response.
 
-Multidimensional Quality Score (1-5): 
-
-## Semantic Appropriateness 
+## Semantic Appropriateness
 Evaluate Semantic Appropriateness in the Generated Response
 
 You will be given a source text and a generated response. Your task is to evaluate the semantic appropriateness of the generated response by comparing it to the source text.
@@ -208,17 +145,8 @@ You will be given a source text and a generated response. Your task is to evalua
 
 **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
 
-**Example**:
-Source Text:
-{source_text}
-
-Generated Response:
-{generated_response}
-
 Evaluation Explanation:
 - Provide an analysis of the semantic appropriateness, highlighting specific aspects where the generated response aligns or diverges from the meaning and context of the source text.
-
-Semantic Appropriateness Score (1-5):
 
 ## Understandability
 Evaluate Understandability in the Generated Response
@@ -236,14 +164,38 @@ You will be given a source text and a generated response. Your task is to evalua
 
 **Important**: Ensure that all responses, including explanations and scores, are generated in Korean.
 
+Evaluation Explanation:
+- Provide an analysis of the understandability, highlighting specific aspects where the generated response is clear or where it may be difficult to comprehend.
+
+## Output Score
 **Example**:
+Question:
+{question}
+
 Source Text:
 {source_text}
 
 Generated Response:
 {generated_response}
 
-Evaluation Explanation:
-- Provide an analysis of the understandability, highlighting specific aspects where the generated response is clear or where it may be difficult to comprehend.
+1. Factuality Score (1-5):
+2. Consistency Score (1-5):
+3. Relevance Score (1-5):
+4. Fluency Score (1-5):
+5. Coherence Score (1-5):
+6. Accuracy Score (1-5):
+7. Multidimensional Quality Score (1-5):
+8. Semantic Appropriateness Score (1-5):
+9. Understandability Score (1-5):
 
-Understandability Score (1-5):
+{{
+    "Factuality Score": 4,
+    "Consistency Score": 3,
+    "Relevance Score": 5,
+    "Fluency Score": 4,
+    "Coherence Score": 4,
+    "Accuracy Score": 4,
+    "Multidimensional Quality Score": 4,
+    "Semantic Appropriateness Score": 4,
+    "Understandability Score": 4
+}}
