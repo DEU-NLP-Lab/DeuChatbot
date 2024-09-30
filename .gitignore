@@ -171,3 +171,6 @@ deuChatbot/test_automation/qna_list.xlsx
 #deuChatbot/test_automation/qna_list_v2.xlsx
 deuChatbot/test_automation/test_sorted.xlsx
 deuChatbot/test_automation/질의응답시간.xlsx
+
+deuChatbot/no_rag_vectorstore/
+.gitignore.bak

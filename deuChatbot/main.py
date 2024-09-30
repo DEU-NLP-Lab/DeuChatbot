@@ -2,7 +2,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter, CharacterTex
 from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_upstage import UpstageEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -402,7 +402,7 @@ class ChatBotSystem:
                 "1: GPT-4o-mini\n2: GPT-4-turbo\n3: GPT-4o\n"
                 "4: Claude-3-sonnet\n5: Claude-3-opus\n6: Claude-3.5-sonnet-20240620\n"
                 "7: Google Gemini-Pro\n"
-                "8: Google Gemma-2-9b-it\n9: Meta Llama-3.1-Instruct\n10: Mistral-Instruct-v0.3\n11: Qwen2-7B-instruct\n"
+                "8: Google Gemma-2-9b-it\n9: Meta Llama-3.1-Instruct\n10: Mistral-Instruct-v0.3\n11: Qwen2.5-7B-instruct\n"
                 "12: EEVE Korean\n13: Llama-3-MAAL-8B-Instruct-v0.1\n\n"
                 "선택 번호 : ")
 
@@ -465,11 +465,11 @@ class ChatBotSystem:
             "9": {"model_name": "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF", "model_class": ChatOpenAI,
                   "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
             "10": {"model_name": "lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF", "model_class": ChatOpenAI,
-                  "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
-            "11": {"model_name": "Qwen/Qwen2-7B-Instruct-GGUF", "model_class": ChatOpenAI,
+                   "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
+            "11": {"model_name": "lmstudio-community/Qwen2.5-7B-Instruct-GGUF", "model_class": ChatOpenAI,
                    "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
             "12": {"model_name": "teddylee777/EEVE-Korean-Instruct-10.8B-v1.0-gguf", "model_class": ChatOpenAI,
-                  "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
+                   "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
             "13": {"model_name": "asiansoul/Llama-3-MAAL-8B-Instruct-v0.1-GGUF", "model_class": ChatOpenAI,
                    "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
         }
@@ -966,7 +966,7 @@ class ExperimentAutomation:
         elif model_checker == '10':
             model_name = 'Mistral-7B-Instruct-v0.3'
         elif model_checker == '11':
-            model_name = 'Qwen2-7B-instruct'
+            model_name = 'Qwen2.5-7B-instruct'
         elif model_checker == '12':
             model_name = 'EEVE-Korean-Instruct-10.8B-v1.0'
         elif model_checker == '13':
@@ -1085,10 +1085,10 @@ class ExperimentAutomation:
 
         # research_result 폴더 내 모든 파일 처리
         for file_name in os.listdir(folder_path):
-            
-            if file_name.startswith('~$'): # 엑셀 임시 파일 오류 방지
-                continue  
-            
+
+            if file_name.startswith('~$'):  # 엑셀 임시 파일 오류 방지
+                continue
+
             file_path = os.path.join(folder_path, file_name)
 
             print(f"file_path: {file_path}")
@@ -1122,7 +1122,6 @@ class ExperimentAutomation:
                         save_path=output_path,
                         save_name=save_name  # 파일 이름 기반으로 저장
                     )
-      
 
                     print(f"Json 전처리 성공: {file_name}")
 
@@ -1179,7 +1178,7 @@ def run():
 
 
 if __name__ == "__main__":
-    # run()
+    run()
 
-    experiment = ExperimentAutomation()
-    experiment.score_calculate()
+    # experiment = ExperimentAutomation()
+    # experiment.score_calculate()
