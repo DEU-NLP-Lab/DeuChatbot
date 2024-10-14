@@ -39,7 +39,7 @@ def docs_load() -> List[str]:
     """
 
     try:
-        loader = TextLoader("corpus/정시 모집요강(동의대) 전처리 결과.txt", encoding="utf-8").load()
+        loader = TextLoader("corpus/모집요강 전처리 버전 1.txt", encoding="utf-8").load()
         return loader
     except FileNotFoundError:
         print("파일을 찾을 수 없습니다. 경로를 확인하세요.")

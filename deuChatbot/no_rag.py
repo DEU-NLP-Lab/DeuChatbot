@@ -88,7 +88,8 @@ class NoRAG:
             # model_name="lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF",
             # model_name="lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF",
             # model_name="bartowski/gemma-2-9b-it-GGUF",
-            model_name="lmstudio-community/Qwen2.5-7B-Instruct-GGUF",
+            # model_name="lmstudio-community/Qwen2.5-7B-Instruct-GGUF",
+            model_name="bartowski/Phi-3.5-mini-instruct-GGUF",
             base_url=os.getenv("LM_URL"),
             api_key="lm-studio",
             temperature=0,
@@ -404,7 +405,8 @@ class ExperimentAutomation:
         # model_name = 'Mistral-7B-Instruct-v0.3'
         # model_name = 'Meta-Llama-3.1-8B-Instruct'
         # model_name = 'Gemma-2-9b-it'
-        model_name = 'Qwen2.5-7B-instruct'
+        # model_name = 'Qwen2.5-7B-instruct'
+        model_name = 'Phi-3.5-mini-instruct'
 
         # if model_checker == '1':
         #     model_name = 'GPT-4o-mini'

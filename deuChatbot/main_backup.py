@@ -642,7 +642,7 @@ def docs_load():
     문서 읽는 함수
     """
 
-    loader = TextLoader("corpus/정시 모집요강(동의대) 전처리 결과.txt", encoding="utf-8").load()
+    loader = TextLoader("corpus/모집요강 전처리 버전 1.txt", encoding="utf-8").load()
 
     return loader
 
