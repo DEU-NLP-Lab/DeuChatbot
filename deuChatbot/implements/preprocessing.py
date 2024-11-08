@@ -4,17 +4,19 @@ import re
 
 
 class GPTScorePreprocessing:
-    def __init__(self, file_path: str, sheet_name: str, col_model_name: int, col_gpt_score: int) -> None:
+    def __init__(self, file_path: str, sheet_name: str, col_model_name: int, col_gpt_score: int,
+                 save_path: str, save_name: str) -> None:
         self.file_path = file_path
         self.sheet_name = sheet_name
         self.col_model_name = col_model_name
         self.col_gpt_score = col_gpt_score
+        self.save_path = save_path
+        self.save_name = save_name
         self.df: pd.DataFrame = None
         self.len_row: int = None
         self.json_pattern = r'\{.*?\}'
         self.preprocessed_json_dict = {}
         self.reset_data()
-        
 
     def reset_data(self) -> None:
         """데이터 초기화 메서드"""
@@ -30,7 +32,7 @@ class GPTScorePreprocessing:
     def extract_json(self) -> None:
         """각 행에서 JSON 데이터 추출 및 전처리"""
         counter = 1
-        
+
         for row_num in range(self.len_row):
             current_model = self.df.iloc[row_num, self.col_model_name]
 
@@ -80,6 +82,51 @@ class GPTScorePreprocessing:
         result["high score model"] = f"{best_model} : {best_score}"
         self.output_json = result
 
+        # 일반 점수 결과 저장
+        self.save_json(self.save_path, self.save_name)
+
+    def aspect_normalize_json(self) -> None:
+        """모델별 점수 평균 계산 및 정규화"""
+        result = {}
+        metrics_averages = {}
+
+        # 각 모델의 데이터 처리
+        for model_name, model_data in self.preprocessed_json_dict.items():
+            normalized_scores = {}
+            metrics_sums = {}  # 각 지표별 합계
+            metrics_counts = {}  # 각 지표별 카운트
+
+            # 각 응답에서 지표별로 점수 합산
+            for idx, score_dict in model_data.items():
+                for metric, score in score_dict.items():
+                    if metric not in metrics_sums:
+                        metrics_sums[metric] = 0
+                        metrics_counts[metric] = 0
+                    metrics_sums[metric] += score
+                    metrics_counts[metric] += 1
+
+            # 각 지표별 평균 계산
+            for metric in metrics_sums.keys():
+                avg_score = round((metrics_sums[metric] / metrics_counts[metric]) * 20, 2)
+                normalized_scores[f"{metric}_average"] = avg_score
+
+                # 지표별 전체 평균 계산을 위해 저장
+                if metric not in metrics_averages:
+                    metrics_averages[metric] = {}
+                metrics_averages[metric][model_name] = avg_score
+
+            result[model_name] = normalized_scores
+
+        # 각 지표별 최고 점수 모델 찾기
+        for metric in metrics_averages.keys():
+            best_model, best_score = self.find_best_model(metrics_averages[metric])
+            result[f"{metric}_best_model"] = f"{best_model} : {best_score}"
+
+        self.output_json = result
+
+        # 지표별 점수 결과 저장
+        self.save_json(self.save_path, f"aspect_{self.save_name}")
+
     def find_best_model(self, score_dict: dict) -> tuple:
         """최고 평균 점수를 가진 모델을 반환"""
         best_model = max(score_dict, key=score_dict.get)
@@ -90,7 +137,10 @@ class GPTScorePreprocessing:
         with open(f"{save_path}/{save_name}.json", "w", encoding="UTF-8") as f:
             json.dump(self.output_json, f, indent=4)
 
-    def run(self):
-        self.load_excel()  # 엑셀 로드
-        self.extract_json()  # Json 추출
-        self.normalize_json()  # 정규화
+    def run(self) -> None:
+        """실행 메서드"""
+        self.load_excel()
+        self.extract_json()
+        self.normalize_json()
+        self.aspect_normalize_json()
+

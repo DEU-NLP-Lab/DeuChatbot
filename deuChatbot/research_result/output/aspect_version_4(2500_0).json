@@ -1,0 +1,22 @@
+{
+    "GPT-4o-mini": {
+        "Factuality Score_average": 68.0,
+        "Consistency Score_average": 65.2,
+        "Relevance Score_average": 83.6,
+        "Fluency Score_average": 92.2,
+        "Coherence Score_average": 82.0,
+        "Accuracy Score_average": 67.8,
+        "Multidimensional Quality Score_average": 69.6,
+        "Semantic Appropriateness Score_average": 77.8,
+        "Understandability Score_average": 90.2
+    },
+    "Factuality Score_best_model": "GPT-4o-mini : 68.0",
+    "Consistency Score_best_model": "GPT-4o-mini : 65.2",
+    "Relevance Score_best_model": "GPT-4o-mini : 83.6",
+    "Fluency Score_best_model": "GPT-4o-mini : 92.2",
+    "Coherence Score_best_model": "GPT-4o-mini : 82.0",
+    "Accuracy Score_best_model": "GPT-4o-mini : 67.8",
+    "Multidimensional Quality Score_best_model": "GPT-4o-mini : 69.6",
+    "Semantic Appropriateness Score_best_model": "GPT-4o-mini : 77.8",
+    "Understandability Score_best_model": "GPT-4o-mini : 90.2"
+}

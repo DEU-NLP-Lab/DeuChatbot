@@ -70,32 +70,34 @@ class NoRAG:
         os.getenv("LANGCHAIN_TRACING_V2")
         os.getenv("LANGCHAIN_ENDPOINT")
         os.getenv("LANGCHAIN_API_KEY")
+        os.getenv("LANGCHAIN_DEU_PROJECT")
+        os.getenv("LANGCHAIN_EVAL_PROJECT")
         os.getenv("OPENAI_API_KEY")
         os.getenv("LM_URL")
         os.getenv("LM_LOCAL_URL")
 
         # OpenAI
-        # llm = ChatOpenAI(
-        #     model_name="gpt-4o-mini",
-        #     api_key=os.getenv("OPENAI_API_KEY"),
-        #     temperature=0,
-        #     streaming=True,
-        #     callbacks=[StreamingStdOutCallbackHandler()],
-        # )
-
-        # LM Studio
         llm = ChatOpenAI(
-            # model_name="lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF",
-            # model_name="lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF",
-            # model_name="bartowski/gemma-2-9b-it-GGUF",
-            # model_name="lmstudio-community/Qwen2.5-7B-Instruct-GGUF",
-            model_name="bartowski/Phi-3.5-mini-instruct-GGUF",
-            base_url=os.getenv("LM_URL"),
-            api_key="lm-studio",
+            model_name="gpt-4o-mini",
+            api_key=os.getenv("OPENAI_API_KEY"),
             temperature=0,
             streaming=True,
             callbacks=[StreamingStdOutCallbackHandler()],
         )
+
+        # LM Studio
+        # llm = ChatOpenAI(
+        #     # model_name="lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF",
+        #     # model_name="lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF",
+        #     # model_name="bartowski/gemma-2-9b-it-GGUF",
+        #     # model_name="lmstudio-community/Qwen2.5-7B-Instruct-GGUF",
+        #     model_name="bartowski/Phi-3.5-mini-instruct-GGUF",
+        #     base_url=os.getenv("LM_URL"),
+        #     api_key="lm-studio",
+        #     temperature=0,
+        #     streaming=True,
+        #     callbacks=[StreamingStdOutCallbackHandler()],
+        # )
 
         prompt = ChatPromptTemplate.from_messages(
             [

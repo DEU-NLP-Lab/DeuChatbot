@@ -1,0 +1,33 @@
+{
+    "GPT-4o-mini": {
+        "Factuality Score_average": 73.4,
+        "Consistency Score_average": 68.2,
+        "Relevance Score_average": 88.8,
+        "Fluency Score_average": 90.2,
+        "Coherence Score_average": 83.8,
+        "Accuracy Score_average": 73.2,
+        "Multidimensional Quality Score_average": 74.4,
+        "Semantic Appropriateness Score_average": 80.6,
+        "Understandability Score_average": 89.2
+    },
+    "Google Gemma-2-9b-it": {
+        "Factuality Score_average": 52.4,
+        "Consistency Score_average": 49.8,
+        "Relevance Score_average": 72.4,
+        "Fluency Score_average": 85.6,
+        "Coherence Score_average": 75.0,
+        "Accuracy Score_average": 52.2,
+        "Multidimensional Quality Score_average": 54.6,
+        "Semantic Appropriateness Score_average": 64.8,
+        "Understandability Score_average": 84.6
+    },
+    "Factuality Score_best_model": "GPT-4o-mini : 73.4",
+    "Consistency Score_best_model": "GPT-4o-mini : 68.2",
+    "Relevance Score_best_model": "GPT-4o-mini : 88.8",
+    "Fluency Score_best_model": "GPT-4o-mini : 90.2",
+    "Coherence Score_best_model": "GPT-4o-mini : 83.8",
+    "Accuracy Score_best_model": "GPT-4o-mini : 73.2",
+    "Multidimensional Quality Score_best_model": "GPT-4o-mini : 74.4",
+    "Semantic Appropriateness Score_best_model": "GPT-4o-mini : 80.6",
+    "Understandability Score_best_model": "GPT-4o-mini : 89.2"
+}

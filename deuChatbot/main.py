@@ -38,6 +38,8 @@ from konlpy.tag import Kkma, Okt
 
 from implements.preprocessing import GPTScorePreprocessing
 
+import torch
+
 
 class ChatBotSystem:
     def __init__(self):
@@ -52,6 +54,8 @@ class ChatBotSystem:
         os.getenv("LANGCHAIN_TRACING_V2")
         os.getenv("LANGCHAIN_ENDPOINT")
         os.getenv("LANGCHAIN_API_KEY")
+        os.getenv("LANGCHAIN_DEU_PROJECT")
+        os.getenv("LANGCHAIN_PROJECT")
 
         os.getenv("OPENAI_API_KEY")
         os.getenv("ANTHROPIC_API_KEY")
@@ -67,10 +71,10 @@ class ChatBotSystem:
         """
 
         try:
+            # loader = TextLoader("corpus/table_to_json.txt", encoding="utf-8").load()
             # loader = TextLoader("corpus/모집요강 전처리 버전 1.txt", encoding="utf-8").load()
-            # loader = TextLoader("corpus/모집요강 전처리 버전 2.txt", encoding="utf-8").load()
-            # loader = TextLoader("corpus/모집요강 전처리 버전 3.txt", encoding="utf-8").load()
-            loader = TextLoader("corpus/모집요강 전처리 버전 4.txt", encoding="utf-8").load()
+            loader = TextLoader("corpus/모집요강 전처리 버전 2.txt", encoding="utf-8").load()
+            # loader = TextLoader("corpus/모집요강 전처리 버전 4.txt", encoding="utf-8").load()
             return loader
         except FileNotFoundError:
             print("파일을 찾을 수 없습니다. 경로를 확인하세요.")
@@ -148,6 +152,14 @@ class ChatBotSystem:
 
         return text_documents
 
+    def len_kiwi(self, text):
+        tokens = [token.form for token in self.kiwi.tokenize(text)]
+        return len(tokens)
+
+    def len_okt(self, text):
+        tokens = [token for token in self.okt.morphs(text)]
+        return len(tokens)
+
     def rc_text_split(self, corpus: List[str]) -> List[str]:
         """
         RecursiveCharacterTextSplitter를 사용하여 문서를 분할하도록 하는 함수
@@ -197,20 +209,27 @@ class ChatBotSystem:
 
         overlap_size = overlap_size_checker.get(overlap_size_number, 0)
 
-        rc_text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-            # separators=["---", "\n\n", "\n"],
+        # rc_text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        #     # separators=["---", "\n\n", "\n"],
+        #     separators=["\n\n", "\n", " "],
+        #     chunk_size=chunk_size,
+        #     chunk_overlap=overlap_size,
+        #     model_name="gpt-4o"  # o200k_base
+        #     # model_name="gpt-4"  # cl100k_base
+        # )
+
+        rc_text_splitter = RecursiveCharacterTextSplitter(
             separators=["\n\n", "\n", " "],
             chunk_size=chunk_size,
             chunk_overlap=overlap_size,
-            model_name="gpt-4o"  # o200k_base
-            # model_name="gpt-4"  # cl100k_base
+            length_function=self.len_okt
         )
 
         text_documents = rc_text_splitter.split_documents(corpus)
         print(f"문서가 {len(text_documents)}개로 분할되었습니다.\n")
-        print(f"첫 번째 문서의 내용: {text_documents[100].page_content}\n")
 
         return text_documents, chunk_size, overlap_size
+
 
     def embedding_model_select_save(self):
         """
@@ -409,13 +428,13 @@ class ChatBotSystem:
                 "4: Claude-3-sonnet\n5: Claude-3-opus\n6: Claude-3.5-sonnet-20240620\n"
                 "7: Google Gemini-Pro\n"
                 "8: Google Gemma-2-9b-it\n9: Meta Llama-3.1-Instruct\n10: Mistral-Instruct-v0.3\n11: Qwen2.5-7B-instruct\n"
-                "12: EEVE Korean\n13: Llama-3-MAAL-8B-Instruct-v0.1\n\n"
+                "12: EEVE Korean\n13: Llama-3-MAAL-8B-Instruct-v0.1\n14: Qwen2.5-7B-instruct-kowiki\n\n"
                 "선택 번호 : ")
 
-            if model_check in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13']:
+            if model_check in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']:
                 break
             else:
-                print("잘못된 입력입니다. 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 중 하나를 선택해주세요.\n")
+                print("잘못된 입력입니다. 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 중 하나를 선택해주세요.\n")
 
         model_info = self.get_model_info(model_check)
         model_class = model_info["model_class"]
@@ -466,9 +485,9 @@ class ChatBotSystem:
             "5": {"model_name": "claude-3-opus-20240229", "model_class": ChatAnthropic},
             "6": {"model_name": "claude-3-5-sonnet-20240620", "model_class": ChatAnthropic},
             "7": {"model_name": "gemini-1.5-pro-exp-0827", "model_class": ChatGoogleGenerativeAI},
-            "8": {"model_name": "bartowski/gemma-2-9b-it-GGUF", "model_class": ChatOpenAI,
+            "8": {"model_name": "lmstudio-community/gemma-2-9b-it-GGUF", "model_class": ChatOpenAI,
                   "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
-            "9": {"model_name": "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF", "model_class": ChatOpenAI,
+            "9": {"model_name": "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF", "model_class": ChatOpenAI,
                   "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
             "10": {"model_name": "lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF", "model_class": ChatOpenAI,
                    "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
@@ -477,6 +496,8 @@ class ChatBotSystem:
             "12": {"model_name": "teddylee777/EEVE-Korean-Instruct-10.8B-v1.0-gguf", "model_class": ChatOpenAI,
                    "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
             "13": {"model_name": "asiansoul/Llama-3-MAAL-8B-Instruct-v0.1-GGUF", "model_class": ChatOpenAI,
+                   "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
+            "14": {"model_name": "teddylee777/Qwen2.5-7B-Instruct-kowiki-qa-gguf", "model_class": ChatOpenAI,
                    "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
         }
 
@@ -545,12 +566,8 @@ class ChatBotSystem:
                 (
                     "system",
                     """
-                    You are a specialized AI for question-and-answer tasks.
-                    You must answer questions based solely on the Context provided.
-                    For questions about predicting successful applicants, base your answers on data from either the initial successful applicants or the final enrolled students.
+                    You are a helpful AI Assistant. Please answer in Korean. Context: {context}
                     If no Context is provided, you must instruct to inquire at "https://ipsi.deu.ac.kr/main.do".
-
-                    Context: {context}
                     """,
                 ),
                 ("human", "Question: {question}"),
@@ -586,22 +603,16 @@ class ChatBotSystem:
         """
 
         db = db.as_retriever(
-            search_kwargs={'k': 3},
+            search_kwargs={'k': 5},
         )
         bm_db.k = 3  # BM25Retriever의 검색 결과 개수를 3로 설정
 
         # 앙상블 retriever를 초기화합니다.
         ensemble_retriever = EnsembleRetriever(
             retrievers=[bm_db, db],
-            weights=[0.7, 0.3],
+            weights=[0.5, 0.5],
             search_type="mmr",
         )
-
-        """
-You are a helpful AI Assistant. Please answer in Korean.
-You must answer questions based solely on the Context provided.
-If no Context is provided, you must instruct to inquire at "https://ipsi.deu.ac.kr/main.do".
-        """
 
         # 질문에 대한 답변을 찾기 위한 프롬프트
         prompt = ChatPromptTemplate.from_messages(
@@ -609,51 +620,11 @@ If no Context is provided, you must instruct to inquire at "https://ipsi.deu.ac.
                 (
                     "system",
                     """                    
-You are a helpful AI Assistant. Please answer in Korean.
 
-**Context Format:**
+You are a helpful AI Assistant. Please answer in Korean. 
+Please provide responses based on the context provided if unsure, direct inquiries to “https://ipsi.deu.ac.kr/main.do”.
 
-You will be provided with Context in a structured format enclosed within `<row>` tags. Each `<row>` contains a `<title>` element representing the title, followed by a series of `<attr>` (attribute) and `<value>` pairs. Attributes can be nested to represent hierarchical relationships.
-
-**Structure Examples:**
-
-- **Simple Attributes:**
-```xml
-<row> <title>표 제목 1</title>에서 <attr>속성 1</attr>은 <value>값 1</value>이며, <attr>속성 2</attr>은 <value>값 2</value>이다. </row>
-```
-
-- Nested Attributes:
-```xml
-<row><title>표  제목 1</title>에서 <attr>표 속성 1</attr>은 <value>값 1</value>이며, <attr>표 속성 2</attr>은 <value>값 2</value>이며, <attr>표 속성 3</attr>은 <value>값 3</value>이며, <attr>표 속성 4</attr>의 <attr>표 속성 4-1</attr>은 <value>값 4</value>이며, <attr>표 속성 4</attr>의 <attr>표 속성 4-2</attr>은 <value>값 5</value>이며, <attr>표 속성 4</attr>의 <attr>표 속성 4-3</attr>은 <value>값 6</value>이다.</row>
-```
-
-```xml
-<row><title>표  제목 3</title>에서 <attr>표 속성 1</attr>은 <value>값 1</value>이며, <attr>표 속성 2</attr>은 <value>값 2</value>이며, <attr>표 속성 3</attr>은 <value>값 3</value>이며, <attr>표 속성 4</attr>의 <attr>표 속성 4-1</attr>의 <attr>표 속성 4-1-1</attr>은 <value>값 4</value>이며, <attr>표 속성 4</attr>의 <attr>표 속성 4-1</attr>의 <attr>표 속성 4-1-2</attr>은 <value>값 5</value>이며, <attr>표 속성 4</attr>의 <attr>표 속성 4-2</attr>은 <value>값 6</value>이다.</row>
-```
-
-**Your Task:**
-
-- **Extract and Interpret Information:**
-
-  - Carefully parse the Context, paying attention to the hierarchy and relationships between attributes.
-  - Accurately extract values corresponding to their attributes.
-- Answer Based Solely on the Context:
-  - Use only the information explicitly provided in the Context.
-  - Do not introduce any external information or assumptions.
-- Provide Clear and Concise Answers:
-  - Present the information in an organized manner.
-  - Ensure your response is easy to understand for the user.
-- If No Context Is Provided:
-  - Instruct the user to inquire at "https://ipsi.deu.ac.kr/main.do".
-
-**Important Notes:**
-
-- **Language**: All your responses should be in Korean.
-- **Accuracy**: Double-check the extracted information for correctness.
-- **Clarity**: Use appropriate formatting or bullet points if necessary to enhance readability.
-
-**Context:**
-
+**Context**
 {context}
                     """,
                 ),
@@ -697,6 +668,7 @@ You will be provided with Context in a structured format enclosed within `<row>`
                 (
                     "system",
                     """
+                    <I_WANT_TO_CACHE>
                     # GPTScore Prompt Template
 
                     ## Factuality
@@ -898,7 +870,7 @@ You will be provided with Context in a structured format enclosed within `<row>`
                         "Semantic Appropriateness Score": 4,
                         "Understandability Score": 4
                     }}
-
+                    </I_WANT_TO_CACHE>
                     """,
                 ),
                 ("human", "generated_response: {generated_response}"),
@@ -993,9 +965,19 @@ class ExperimentAutomation:
         """
 
         embedding_model_name = embedding_model_name.replace('/', '_')
-        filename = f'research_result/{embedding_model_name}_({chunk_size}_{overlap_size})_RecursiveCharacterTextSplitter.xlsx'
+        # filename = f'research_result/{embedding_model_name}_({chunk_size}_{overlap_size})_RecursiveCharacterTextSplitter.xlsx'
 
-        filename = f'research_result/v2_({chunk_size}_{overlap_size}).xlsx'
+        # json 형식을 그대로 txt 파일에 저장하여 실험
+        # filename = f'research_result/table_to_json({chunk_size}_{overlap_size}).xlsx'
+
+        # 전처리 기법 1번 실험 (구분자로 속성 구분)
+        # filename = f'research_result/version_1({chunk_size}_{overlap_size}).xlsx'
+
+        # 전처리 기법 2번 실험 (완전 자연어)
+        filename = f'research_result/version_2({chunk_size}_{overlap_size}).xlsx'
+
+        # 자연어 + XML 태그
+        # filename = f'research_result/version_4({chunk_size}_{overlap_size}).xlsx'
 
         # model_checker 값을 모델 이름으로 변환
         model_name = ''
@@ -1025,6 +1007,8 @@ class ExperimentAutomation:
             model_name = 'EEVE-Korean-Instruct-10.8B-v1.0'
         elif model_checker == '13':
             model_name = 'Llama-3-MAAL-8B-Instruct-v0.1'
+        elif model_checker == '14':
+            model_name = 'Qwen2.5-7B-instruct-kowiki'
         try:
             # 기존 엑셀 파일 열기
             workbook = load_workbook(filename)
@@ -1151,12 +1135,17 @@ class ExperimentAutomation:
             if file_name.endswith('.xlsx'):
                 print("steste")
                 try:
+                    # 파일 이름에서 확장자 제거하여 저장 이름 설정
+                    save_name = os.path.splitext(file_name)[0]
+
                     # Json 전처리
                     score_preprocessing = GPTScorePreprocessing(
                         file_path,  # 각 파일 경로
                         "Sheet",  # 엑셀 파일의 시트명
                         0,  # model_name 열 순번
-                        1  # GPTScore 열 순번
+                        1,  # GPTScore 열 순번
+                        save_path=output_path,  # 저장 경로
+                        save_name=save_name  # 저장 이름
                     )
 
                     # score_preprocessing.load_excel()  # 엑셀 로드
@@ -1165,17 +1154,17 @@ class ExperimentAutomation:
                     score_preprocessing.run()  # 엑셀 로드 -> Json 추출 -> 정규화
 
                     # 파일 이름에서 확장자 제거하여 저장 이름 설정
-                    save_name = os.path.splitext(file_name)[0]
+                    # save_name = os.path.splitext(file_name)[0]
                     # save_file_path = os.path.join(output_path, f"{save_name}.json")
 
                     # 파일이 이미 존재하는지 확인하고 덮어쓰기 처리
                     # if os.path.exists(save_file_path):
                     #     print(f"파일이 이미 존재합니다. 덮어쓰기 합니다: {save_file_path}")
 
-                    score_preprocessing.save_json(
-                        save_path=output_path,
-                        save_name=save_name  # 파일 이름 기반으로 저장
-                    )
+                    # score_preprocessing.save_json(
+                    #     save_path=output_path,
+                    #     save_name=save_name  # 파일 이름 기반으로 저장
+                    # )
 
                     print(f"Json 전처리 성공: {file_name}")
 
@@ -1214,9 +1203,9 @@ def run():
 
     # bm25 + 한글 형태소 분석기(kiwi, Kkma, Okt) 추가
     # db, bm_db = chatbot.document_embedding_basic(chunk, embedding_model, save_directory="./chroma_db")
-    db, bm_db = chatbot.document_embedding_kiwi(chunk, embedding_model, save_directory="./chroma_db")
+    # db, bm_db = chatbot.document_embedding_kiwi(chunk, embedding_model, save_directory="./chroma_db")
     # db, bm_db = chatbot.document_embedding_kkma(chunk, embedding_model, save_directory="./chroma_db")
-    # db, bm_db = chatbot.document_embedding_okt(chunk, embedding_model, save_directory="./chroma_db")
+    db, bm_db = chatbot.document_embedding_okt(chunk, embedding_model, save_directory="./chroma_db")
 
     # 채팅에 사용할 거대언어모델(LLM) 선택
     llm, model_num = chatbot.chat_llm()
