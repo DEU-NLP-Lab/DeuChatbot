@@ -46,13 +46,30 @@ class GPTScorePreprocessing:
             if search_json:
                 text_search_json = search_json.group()
 
-                # 모델별로 중첩된 딕셔너리 생성
-                if current_model not in self.preprocessed_json_dict:
-                    self.preprocessed_json_dict[current_model] = {}
+                try:
+                    # JSON 파싱
+                    parsed_json = json.loads(text_search_json)
 
-                # JSON 데이터를 파싱하여 저장
-                self.preprocessed_json_dict[current_model][counter] = json.loads(text_search_json)
-                counter += 1
+                    # 모든 값을 정수로 변환
+                    converted_json = {k: int(v) for k, v in parsed_json.items()}
+
+                    # 모델별로 중첩된 딕셔너리 생성
+                    if current_model not in self.preprocessed_json_dict:
+                        self.preprocessed_json_dict[current_model] = {}
+
+                    # 변환된 JSON 데이터를 저장
+                    self.preprocessed_json_dict[current_model][counter] = converted_json
+                    counter += 1
+                except (ValueError, TypeError) as e:
+                    print(f"[{row_num}] 행의 JSON 값 변환 중 오류 발생: {e}")
+
+                # # 모델별로 중첩된 딕셔너리 생성
+                # if current_model not in self.preprocessed_json_dict:
+                #     self.preprocessed_json_dict[current_model] = {}
+                #
+                # # JSON 데이터를 파싱하여 저장
+                # self.preprocessed_json_dict[current_model][counter] = json.loads(text_search_json)
+                # counter += 1
             else:
                 print(f"[{row_num}] 행에서 JSON 형식이 발견되지 않았습니다.")
 

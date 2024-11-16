@@ -72,8 +72,8 @@ class ChatBotSystem:
 
         try:
             # loader = TextLoader("corpus/table_to_json.txt", encoding="utf-8").load()
-            # loader = TextLoader("corpus/모집요강 전처리 버전 1.txt", encoding="utf-8").load()
-            loader = TextLoader("corpus/모집요강 전처리 버전 2.txt", encoding="utf-8").load()
+            loader = TextLoader("corpus/모집요강 전처리 버전 1.txt", encoding="utf-8").load()
+            # loader = TextLoader("corpus/모집요강 전처리 버전 2.txt", encoding="utf-8").load()
             # loader = TextLoader("corpus/모집요강 전처리 버전 4.txt", encoding="utf-8").load()
             return loader
         except FileNotFoundError:
@@ -971,10 +971,10 @@ class ExperimentAutomation:
         # filename = f'research_result/table_to_json({chunk_size}_{overlap_size}).xlsx'
 
         # 전처리 기법 1번 실험 (구분자로 속성 구분)
-        # filename = f'research_result/version_1({chunk_size}_{overlap_size}).xlsx'
+        filename = f'research_result/version_1({chunk_size}_{overlap_size}).xlsx'
 
         # 전처리 기법 2번 실험 (완전 자연어)
-        filename = f'research_result/version_2({chunk_size}_{overlap_size}).xlsx'
+        # filename = f'research_result/version_2({chunk_size}_{overlap_size}).xlsx'
 
         # 자연어 + XML 태그
         # filename = f'research_result/version_4({chunk_size}_{overlap_size}).xlsx'
