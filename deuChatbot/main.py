@@ -13,6 +13,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 
 import os
+from datetime import datetime
 import shutil
 from dotenv import load_dotenv
 import openpyxl
@@ -72,9 +73,8 @@ class ChatBotSystem:
 
         try:
             # loader = TextLoader("corpus/table_to_json.txt", encoding="utf-8").load()
-            loader = TextLoader("corpus/모집요강 전처리 버전 1.txt", encoding="utf-8").load()
-            # loader = TextLoader("corpus/모집요강 전처리 버전 2.txt", encoding="utf-8").load()
-            # loader = TextLoader("corpus/모집요강 전처리 버전 4.txt", encoding="utf-8").load()
+            # loader = TextLoader("corpus/모집요강 전처리 버전 1.txt", encoding="utf-8").load()
+            loader = TextLoader("corpus/모집요강 전처리 버전 2.txt", encoding="utf-8").load()
             return loader
         except FileNotFoundError:
             print("파일을 찾을 수 없습니다. 경로를 확인하세요.")
@@ -91,7 +91,7 @@ class ChatBotSystem:
         """
 
         # 청크 사이즈 선택
-        chunk_size_number = input("chunk_size를 선택해주세요. 기본값은 1500입니다.\n"
+        chunk_size_number = input("chunk_size를 선택해주세요. 기본값은 512입니다.\n"
                                   "1: 1500\n"
                                   "2: 2000\n"
                                   "3: 2500\n"
@@ -101,6 +101,7 @@ class ChatBotSystem:
                                   "선택 번호: ")
 
         chunk_size_checker = {
+            '0': 512,
             '1': 1500,
             '2': 2000,
             '3': 2500,
@@ -109,7 +110,7 @@ class ChatBotSystem:
             '6': 4000
         }
 
-        chunk_size = chunk_size_checker.get(chunk_size_number, 1500)
+        chunk_size = chunk_size_checker.get(chunk_size_number, 512)
 
         # 오버랩 사이즈 선택
         overlap_size_number = input("chunk_overlap를 선택해주세요. 기본값은 0입니다.\n"
@@ -168,25 +169,29 @@ class ChatBotSystem:
         """
 
         # 청크 사이즈 선택
-        chunk_size_number = input("chunk_size를 선택해주세요. 기본값은 1500입니다.\n"
-                                  "1: 1500\n"
-                                  "2: 2000\n"
-                                  "3: 2500\n"
-                                  "4: 3000\n"
-                                  "5: 3500\n"
-                                  "6: 4000\n\n"
+        chunk_size_number = input("chunk_size를 선택해주세요. 기본값은 512입니다.\n"
+                                  "0: 512\n"
+                                  "1: 1000\n"
+                                  "2: 1500\n"
+                                  "3: 2000\n"
+                                  "4: 2500\n"
+                                  "5: 3000\n"
+                                  "6: 3500\n"
+                                  "7: 4000\n\n"
                                   "선택 번호: ")
 
         chunk_size_checker = {
-            '1': 1500,
-            '2': 2000,
-            '3': 2500,
-            '4': 3000,
-            '5': 3500,
-            '6': 4000
+            '0': 512,
+            '1': 1000,
+            '2': 1500,
+            '3': 2000,
+            '4': 2500,
+            '5': 3000,
+            '6': 3500,
+            '7': 4000
         }
 
-        chunk_size = chunk_size_checker.get(chunk_size_number, 1500)
+        chunk_size = chunk_size_checker.get(chunk_size_number, 512)
 
         # 오버랩 사이즈 선택
         overlap_size_number = input("chunk_overlap를 선택해주세요. 기본값은 0입니다.\n"
@@ -227,6 +232,9 @@ class ChatBotSystem:
 
         text_documents = rc_text_splitter.split_documents(corpus)
         print(f"문서가 {len(text_documents)}개로 분할되었습니다.\n")
+
+        for i, text in enumerate(text_documents):
+            print(f"{i + 1}번째 문서: {text}\n")
 
         return text_documents, chunk_size, overlap_size
 
@@ -277,13 +285,13 @@ class ChatBotSystem:
                 '6': "jhgan/ko-sroberta-sts",
                 '7': "jhgan/ko-sbert-sts",
                 '8': "BAAI/bge-m3",
-                '9': "sentence-transformers/LaBSE",
+                '9': "intfloat/multilingual-e5-large",
                 '10': "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
                 '11': "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
             }
 
             embedding_model_number = input(
-                "사용할 HuggingFace Embedding Model을 선택하시오. 기본으로 jhgan/ko-sroberta-multitask 모델을 사용합니다.\n"
+                "사용할 HuggingFace Embedding Model을 선택하시오. 기본으로 intfloat/multilingual-e5-large 모델을 사용합니다.\n"
                 "1: snunlp/KR-SBERT-V40K-klueNLI-augSTS\n"
                 "2: jhgan/ko-sroberta-multitask\n"
                 "3: jhgan/ko-sbert-multitask\n"
@@ -292,12 +300,12 @@ class ChatBotSystem:
                 "6: jhgan/ko-sroberta-sts\n"
                 "7: jhgan/ko-sbert-sts\n"
                 "8: BAAI/bge-m3\n"
-                "9: sentence-transformers/LaBSE\n"
+                "9: intfloat/multilingual-e5-large\n"
                 "10: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2\n"
                 "11: sentence-transformers/paraphrase-multilingual-mpnet-base-v2\n\n"
                 "선택 번호: ")
 
-            model_name = models.get(embedding_model_number, "jhgan/ko-sroberta-multitask")
+            model_name = models.get(embedding_model_number, "intfloat/multilingual-e5-large")
 
             # model_kwargs = {'device': 'cpu'}  # cpu를 사용하기 위해 설정
             model_kwargs = {'device': 'cuda'}  # gpu를 사용하기 위해 설정
@@ -427,14 +435,14 @@ class ChatBotSystem:
                 "1: GPT-4o-mini\n2: GPT-4-turbo\n3: GPT-4o\n"
                 "4: Claude-3-sonnet\n5: Claude-3-opus\n6: Claude-3.5-sonnet-20240620\n"
                 "7: Google Gemini-Pro\n"
-                "8: Google Gemma-2-9b-it\n9: Meta Llama-3.1-Instruct\n10: Mistral-Instruct-v0.3\n11: Qwen2.5-7B-instruct\n"
-                "12: EEVE Korean\n13: Llama-3-MAAL-8B-Instruct-v0.1\n14: Qwen2.5-7B-instruct-kowiki\n\n"
+                "8: Google Gemma-2-9b-it\n9: Meta Llama-3.2-Instruct\n10: Mistral-Instruct-v0.3\n11: Qwen2.5-7B-instruct\n"
+                "12: EEVE Korean\n13: Llama-3-MAAL-8B-Instruct-v0.1\n14: Qwen2.5-7B-instruct-kowiki\n15: Phi-3.5-mini-Instruct\n\n"
                 "선택 번호 : ")
 
-            if model_check in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']:
+            if model_check in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15']:
                 break
             else:
-                print("잘못된 입력입니다. 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 중 하나를 선택해주세요.\n")
+                print("잘못된 입력입니다. 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 중 하나를 선택해주세요.\n")
 
         model_info = self.get_model_info(model_check)
         model_class = model_info["model_class"]
@@ -447,6 +455,7 @@ class ChatBotSystem:
                 "model_name": model_info["model_name"],
                 "streaming": True,
                 "callbacks": [StreamingStdOutCallbackHandler()],
+                "max_tokens": 500
             })
             if "base_url" in model_info:
                 model_kwargs["base_url"] = model_info["base_url"]
@@ -487,7 +496,7 @@ class ChatBotSystem:
             "7": {"model_name": "gemini-1.5-pro-exp-0827", "model_class": ChatGoogleGenerativeAI},
             "8": {"model_name": "lmstudio-community/gemma-2-9b-it-GGUF", "model_class": ChatOpenAI,
                   "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
-            "9": {"model_name": "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF", "model_class": ChatOpenAI,
+            "9": {"model_name": "bartowski/Llama-3.2-3B-Instruct-GGUF", "model_class": ChatOpenAI,
                   "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
             "10": {"model_name": "lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF", "model_class": ChatOpenAI,
                    "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
@@ -497,7 +506,9 @@ class ChatBotSystem:
                    "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
             "13": {"model_name": "asiansoul/Llama-3-MAAL-8B-Instruct-v0.1-GGUF", "model_class": ChatOpenAI,
                    "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
-            "14": {"model_name": "teddylee777/Qwen2.5-7B-Instruct-kowiki-qa-gguf", "model_class": ChatOpenAI,
+            "14": {"model_name": "teddylee777/Qwen2.5-7B-Instruct-kowiki-qa-context-gguf", "model_class": ChatOpenAI,
+                   "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
+            "15": {"model_name": "bartowski/Phi-3.5-mini-instruct-GGUF", "model_class": ChatOpenAI,
                    "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
         }
 
@@ -611,17 +622,17 @@ class ChatBotSystem:
         ensemble_retriever = EnsembleRetriever(
             retrievers=[bm_db, db],
             weights=[0.5, 0.5],
-            search_type="mmr",
         )
 
         # 질문에 대한 답변을 찾기 위한 프롬프트
+        # 입시 질의응답 프롬프트
         prompt = ChatPromptTemplate.from_messages(
             [
                 (
                     "system",
-                    """                    
+                    """
 
-You are a helpful AI Assistant. Please answer in Korean. 
+You are a helpful AI Assistant. Please answer in Korean.
 Please provide responses based on the context provided if unsure, direct inquiries to “https://ipsi.deu.ac.kr/main.do”.
 
 **Context**
@@ -951,7 +962,7 @@ class ExperimentAutomation:
         return dot_product / (norm_a * norm_b)
 
     def save_qna_list_v2(self, q, a, model_answer, model_checker, similarity, embedding_model_name, chunk_size,
-                         overlap_size, gpt_score_response):
+                         overlap_size, gpt_score_response):  # gpt_score_response 추가하기
         """
         질의 응답을 엑셀 파일에 추가하는 함수 (중복 질문 제거)
         @param q: 질의
@@ -965,19 +976,52 @@ class ExperimentAutomation:
         """
 
         embedding_model_name = embedding_model_name.replace('/', '_')
+
+        # 오늘 날짜
+        today = datetime.today().strftime('%y%m%d')
+
+        folder_path = "research_result"
+
+        # json 형식을 그대로 txt 파일에 저장하여 실험
+        # filename = f"{folder_path}/{today}/table_to_json({chunk_size}_{overlap_size}).xlsx"
+
+        # 전처리 기법 1번 실험 (구분자로 속성 구분)
+        # filename = f"{folder_path}/{today}/version_1({chunk_size}_{overlap_size}).xlsx"
+
+        # 한국어 조사 체계기반
+        filename = f"{folder_path}/{today}/version_2({chunk_size}_{overlap_size}).xlsx"
+
+        # 폴더가 없으면 생성
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+
         # filename = f'research_result/{embedding_model_name}_({chunk_size}_{overlap_size})_RecursiveCharacterTextSplitter.xlsx'
 
         # json 형식을 그대로 txt 파일에 저장하여 실험
         # filename = f'research_result/table_to_json({chunk_size}_{overlap_size}).xlsx'
 
         # 전처리 기법 1번 실험 (구분자로 속성 구분)
-        filename = f'research_result/version_1({chunk_size}_{overlap_size}).xlsx'
+        # filename = f'research_result/version_1({chunk_size}_{overlap_size}).xlsx'
 
         # 전처리 기법 2번 실험 (완전 자연어)
-        # filename = f'research_result/version_2({chunk_size}_{overlap_size}).xlsx'
+        # filename = f'research_result/250212/version_2({chunk_size}_{overlap_size}).xlsx'
 
         # 자연어 + XML 태그
         # filename = f'research_result/version_4({chunk_size}_{overlap_size}).xlsx'
+
+
+        # 테스트
+        # json 형식을 그대로 txt 파일에 저장하여 실험
+        # filename = f'250109/table_to_json({chunk_size}_{overlap_size}).xlsx'
+
+        # 전처리 기법 1번 실험 (구분자로 속성 구분)
+        # filename = f'250109/version_1({chunk_size}_{overlap_size}).xlsx'
+
+        # 전처리 기법 2번 실험 (완전 자연어)
+        # filename = f'250109/version_2({chunk_size}_{overlap_size}).xlsx'
+
+        # 제품 스펙 실험
+        # filename = f'250205/spec/version_2({chunk_size}_{overlap_size}).xlsx'
 
         # model_checker 값을 모델 이름으로 변환
         model_name = ''
@@ -998,7 +1042,7 @@ class ExperimentAutomation:
         elif model_checker == '8':
             model_name = 'Google Gemma-2-9b-it'
         elif model_checker == '9':
-            model_name = 'Meta Llama-3.1-Instruct'
+            model_name = 'Meta Llama-3.2-3B-Instruct'
         elif model_checker == '10':
             model_name = 'Mistral-7B-Instruct-v0.3'
         elif model_checker == '11':
@@ -1009,6 +1053,8 @@ class ExperimentAutomation:
             model_name = 'Llama-3-MAAL-8B-Instruct-v0.1'
         elif model_checker == '14':
             model_name = 'Qwen2.5-7B-instruct-kowiki'
+        elif model_checker == '15':
+            model_name = 'Phi-3.5-mini-instruct'
         try:
             # 기존 엑셀 파일 열기
             workbook = load_workbook(filename)
@@ -1067,12 +1113,14 @@ class ExperimentAutomation:
         :param bm_db: bm 벡터저장소
         :param model_num: 선택한 거대언어모델 이름을 위한 번호
         :param embedding_model: 임베딩 모델
-        :param embedding_model_name: 선택한 임베딩 모델 이름        
-        :param chunk_size: 문서 분할기의 청크 사이즈        
+        :param embedding_model_name: 선택한 임베딩 모델 이름
+        :param chunk_size: 문서 분할기의 청크 사이즈
         :param overlap_size: 문서 분할기의 오버랩 사이즈
         """
 
-        df = pd.read_excel("test_automation/qna.xlsx")
+        # df = pd.read_excel("test_automation/qna.xlsx")  # 원래 실험용
+        df = pd.read_excel("test_automation/real_qna.xlsx")  # 최종 실험용
+        # df = pd.read_excel("test_automation/test.xlsx")  # 이전 실험 파일
 
         questions_list = df['질의'].tolist()
         correct_answers = df['모범 응답'].tolist()
@@ -1096,7 +1144,7 @@ class ExperimentAutomation:
             # 파일 저장
             # save_qna_list(question, response, model_num, similarity)
             self.save_qna_list_v2(question, response, correct_answer, model_num, similarity, embedding_model_name,
-                                  chunk_size, overlap_size, gpt_score_response)
+                                  chunk_size, overlap_size, gpt_score_response) # gpt_score_response 추가하기
 
     def manual_question(self, llm, db, bm_db, model_num, embedding_model):
         check = 'Y'  # 0이면 질문 가능
@@ -1115,13 +1163,16 @@ class ExperimentAutomation:
 
     def score_calculate(self):
         # research_result 폴더 경로
-        folder_path = "research_result"
-        output_path = "research_result/output"
+
+        date = datetime.today().strftime('%y%m%d')
+
+        folder_path = f"research_result/{date}"
+        output_path = f"{folder_path}/output"
 
         # output 폴더가 존재하지 않으면 생성
         os.makedirs(output_path, exist_ok=True)
 
-        # research_result 폴더 내 모든 파일 처리
+        # research_result/날짜 폴더 내 모든 파일 처리
         for file_name in os.listdir(folder_path):
 
             if file_name.startswith('~$'):  # 엑셀 임시 파일 오류 방지
@@ -1148,23 +1199,20 @@ class ExperimentAutomation:
                         save_name=save_name  # 저장 이름
                     )
 
-                    # score_preprocessing.load_excel()  # 엑셀 로드
-                    # score_preprocessing.extract_json()  # Json 추출
-                    # score_preprocessing.normalize_json() # 정규화
                     score_preprocessing.run()  # 엑셀 로드 -> Json 추출 -> 정규화
 
                     # 파일 이름에서 확장자 제거하여 저장 이름 설정
-                    # save_name = os.path.splitext(file_name)[0]
-                    # save_file_path = os.path.join(output_path, f"{save_name}.json")
+                    save_name = os.path.splitext(file_name)[0]
+                    save_file_path = os.path.join(output_path, f"{save_name}.json")
 
                     # 파일이 이미 존재하는지 확인하고 덮어쓰기 처리
-                    # if os.path.exists(save_file_path):
-                    #     print(f"파일이 이미 존재합니다. 덮어쓰기 합니다: {save_file_path}")
+                    if os.path.exists(save_file_path):
+                        print(f"파일이 이미 존재합니다. 덮어쓰기 합니다: {save_file_path}")
 
-                    # score_preprocessing.save_json(
-                    #     save_path=output_path,
-                    #     save_name=save_name  # 파일 이름 기반으로 저장
-                    # )
+                    score_preprocessing.save_json(
+                        save_path=output_path,
+                        save_name=save_name  # 파일 이름 기반으로 저장
+                    )
 
                     print(f"Json 전처리 성공: {file_name}")
 
@@ -1221,7 +1269,7 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    # run()
 
     experiment = ExperimentAutomation()
     experiment.score_calculate()

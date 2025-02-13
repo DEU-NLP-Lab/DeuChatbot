@@ -32,6 +32,17 @@
         "Semantic Appropriateness Score_average": 68.0,
         "Understandability Score_average": 82.4
     },
+    "Qwen2.5-7B-instruct-kowiki": {
+        "Factuality Score_average": 51.0,
+        "Consistency Score_average": 49.0,
+        "Relevance Score_average": 72.2,
+        "Fluency Score_average": 82.6,
+        "Coherence Score_average": 72.4,
+        "Accuracy Score_average": 51.0,
+        "Multidimensional Quality Score_average": 52.0,
+        "Semantic Appropriateness Score_average": 63.4,
+        "Understandability Score_average": 79.2
+    },
     "Factuality Score_best_model": "GPT-4o-mini : 68.8",
     "Consistency Score_best_model": "GPT-4o-mini : 65.0",
     "Relevance Score_best_model": "GPT-4o-mini : 85.0",

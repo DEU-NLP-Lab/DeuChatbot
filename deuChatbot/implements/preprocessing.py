@@ -159,5 +159,5 @@ class GPTScorePreprocessing:
         self.load_excel()
         self.extract_json()
         self.normalize_json()
-        self.aspect_normalize_json()
+        # self.aspect_normalize_json()
 
