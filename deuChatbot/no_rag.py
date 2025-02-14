@@ -508,7 +508,7 @@ class ExperimentAutomation:
 
         # research_result 폴더 경로
         folder_path = "research_result"
-        output_path = "research_result/output"
+        output_path = "research_result/질의응답 데이터셋 수정 전/output"
 
         # output 폴더가 존재하지 않으면 생성
         os.makedirs(output_path, exist_ok=True)

@@ -487,7 +487,7 @@ class ChatBotSystem:
         선택된 모델에 알맞은 정보를 가공하는 함수
         """
         models = {
-            "1": {"model_name": "gpt-4o-mini", "model_class": ChatOpenAI},
+            "1": {"model_name": "gpt-4o-mini-2024-07-18", "model_class": ChatOpenAI},
             "2": {"model_name": "gpt-4-turbo", "model_class": ChatOpenAI},
             "3": {"model_name": "gpt-4o", "model_class": ChatOpenAI},
             "4": {"model_name": "claude-3-sonnet-20240229", "model_class": ChatAnthropic},
@@ -666,7 +666,7 @@ Please provide responses based on the context provided if unsure, direct inquiri
 
         # GPT-4o-mini 선언
         llm = ChatOpenAI(
-            model="gpt-4o-mini",
+            model="gpt-4o-mini-2024-07-18",
             api_key=os.getenv("OPENAI_API_KEY"),
             temperature=0,
             streaming=True,
@@ -1166,7 +1166,11 @@ class ExperimentAutomation:
 
         date = datetime.today().strftime('%y%m%d')
 
-        folder_path = f"research_result/{date}"
+        # folder_path = f"research_result/{date}"
+        # output_path = f"{folder_path}/output"
+
+        # 250214 청크 1500
+        folder_path = f"research_result/250214"
         output_path = f"{folder_path}/output"
 
         # output 폴더가 존재하지 않으면 생성
