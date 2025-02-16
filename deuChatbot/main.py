@@ -1166,12 +1166,12 @@ class ExperimentAutomation:
 
         date = datetime.today().strftime('%y%m%d')
 
-        # folder_path = f"research_result/{date}"
-        # output_path = f"{folder_path}/output"
-
-        # 250214 청크 1500
-        folder_path = f"research_result/250214"
+        folder_path = f"research_result/{date}"
         output_path = f"{folder_path}/output"
+
+        # 250215 청크 2000
+        # folder_path = f"research_result/250215"
+        # output_path = f"{folder_path}/output"
 
         # output 폴더가 존재하지 않으면 생성
         os.makedirs(output_path, exist_ok=True)
@@ -1273,7 +1273,7 @@ def run():
 
 
 if __name__ == "__main__":
-    # run()
+    run()
 
     experiment = ExperimentAutomation()
     experiment.score_calculate()
