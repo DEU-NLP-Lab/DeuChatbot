@@ -72,9 +72,9 @@ class ChatBotSystem:
         """
 
         try:
-            # loader = TextLoader("corpus/table_to_json.txt", encoding="utf-8").load()
+            loader = TextLoader("corpus/table_to_json.txt", encoding="utf-8").load()
             # loader = TextLoader("corpus/모집요강 전처리 버전 1.txt", encoding="utf-8").load()
-            loader = TextLoader("corpus/모집요강 전처리 버전 2.txt", encoding="utf-8").load()
+            # loader = TextLoader("corpus/모집요강 전처리 버전 2.txt", encoding="utf-8").load()
             return loader
         except FileNotFoundError:
             print("파일을 찾을 수 없습니다. 경로를 확인하세요.")
@@ -983,13 +983,13 @@ class ExperimentAutomation:
         folder_path = "research_result"
 
         # json 형식을 그대로 txt 파일에 저장하여 실험
-        # filename = f"{folder_path}/{today}/table_to_json({chunk_size}_{overlap_size}).xlsx"
+        filename = f"{folder_path}/{today}/table_to_json({chunk_size}_{overlap_size}).xlsx"
 
         # 전처리 기법 1번 실험 (구분자로 속성 구분)
         # filename = f"{folder_path}/{today}/version_1({chunk_size}_{overlap_size}).xlsx"
 
         # 한국어 조사 체계기반
-        filename = f"{folder_path}/{today}/version_2({chunk_size}_{overlap_size}).xlsx"
+        # filename = f"{folder_path}/{today}/version_2({chunk_size}_{overlap_size}).xlsx"
 
         # 폴더가 없으면 생성
         os.makedirs(os.path.dirname(filename), exist_ok=True)
