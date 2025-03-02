@@ -350,15 +350,15 @@ def process_folder(input_folder):
 
             # 각 메트릭별 결과 파일 경로 설정
             sem_output = os.path.join(output_folders['sem'], f"sem_{filename}")
-            # meteor_output = os.path.join(output_folders['meteor'], f"meteor_{filename}")
-            # bleu_output = os.path.join(output_folders['bleu'], f"bleu_{filename}")
-            # rouge_output = os.path.join(output_folders['rouge'], f"rouge_{filename}")
+            meteor_output = os.path.join(output_folders['meteor'], f"meteor_{filename}")
+            bleu_output = os.path.join(output_folders['bleu'], f"bleu_{filename}")
+            rouge_output = os.path.join(output_folders['rouge'], f"rouge_{filename}")
 
             # 각 메트릭 계산 및 저장
             sem_score_to_excel(question, responses, model_responses, llm_types, sem_output)
-            # meteor_score_to_excel(responses, model_responses, llm_types, meteor_output)
-            # bleu_score_to_excel(responses, model_responses, llm_types, bleu_output)
-            # rouge_score_to_excel(responses, model_responses, llm_types, rouge_output)
+            meteor_score_to_excel(responses, model_responses, llm_types, meteor_output)
+            bleu_score_to_excel(responses, model_responses, llm_types, bleu_output)
+            rouge_score_to_excel(responses, model_responses, llm_types, rouge_output)
 
 
 if __name__ == "__main__":
@@ -368,7 +368,10 @@ if __name__ == "__main__":
     # input_folder = "250109/kosbert_maxtokens(300)"  # 입력 폴더 경로
     # input_folder = "250109/kosbert_maxtokens(400)"  # 입력 폴더 경로
 
-    date = datetime.today().strftime('%y%m%d')
-    input_folder = f"research_result/{date}"  # 입력 폴더 경로
+    # date = datetime.today().strftime('%y%m%d')
+    # input_folder = f"research_result/{date}"  # 입력 폴더 경로
+
+    # input_folder = f"research_result/gpt_4o_mini/version_2"  # 입력 폴더 경로
+    input_folder = f"research_result/gpt_4o_mini/table_json"  # 입력 폴더 경로
 
     process_folder(input_folder)

@@ -500,7 +500,7 @@ class ChatBotSystem:
                   "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
             "10": {"model_name": "lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF", "model_class": ChatOpenAI,
                    "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
-            "11": {"model_name": "lmstudio-community/Qwen2.5-7B-Instruct-GGUF", "model_class": ChatOpenAI,
+            "11": {"model_name": "Qwen/Qwen2.5-7B-Instruct-GGUF", "model_class": ChatOpenAI,
                    "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
             "12": {"model_name": "teddylee777/EEVE-Korean-Instruct-10.8B-v1.0-gguf", "model_class": ChatOpenAI,
                    "base_url": os.getenv("LM_URL"), "api_key": "lm-studio"},
